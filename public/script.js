@@ -40,6 +40,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const timerRing = document.getElementById("timerRing");
   const timerRingFill = document.getElementById("timerRingFill");
   const timerCount = document.getElementById("timerCount");
+  const timerCustomInput = document.getElementById("timerCustomInput");
   const languageOptions = document.getElementById("languageOptions");
   const doneOverlay = document.getElementById("doneOverlay");
   const progressFill = document.getElementById("progressFill");
@@ -90,9 +91,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function getActiveTimerDuration() {
     if (!timerOptions) return 60;
+    // If the custom input has a valid value, prefer it
+    if (timerCustomInput) {
+      const customVal = parseInt(timerCustomInput.value, 10);
+      if (!isNaN(customVal) && customVal >= 10 && customVal <= 600) return customVal;
+    }
     const active = timerOptions.querySelector(".timer-btn.active");
     const seconds = active ? Number(active.dataset.seconds) : 60;
-    return [30, 60, 90].includes(seconds) ? seconds : 60;
+    return seconds > 0 ? seconds : 60;
   }
 
   function updateTimerRing(total, left) {
@@ -298,6 +304,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const buttons = timerOptions.querySelectorAll(".timer-btn");
       buttons.forEach(btn => { btn.disabled = !canHost; });
     }
+    if (timerCustomInput) timerCustomInput.disabled = !canHost;
   }
 
   function enableGameUI(on) {
@@ -694,10 +701,30 @@ document.addEventListener("DOMContentLoaded", () => {
       const btn = e.target.closest(".timer-btn");
       if (!btn || !currentRoom) return;
       const seconds = Number(btn.dataset.seconds);
-      if (![30, 60, 90].includes(seconds)) return;
+      if (seconds <= 0) return;
+      // Clear custom input when a preset is clicked
+      if (timerCustomInput) timerCustomInput.value = "";
       setActiveTimerButton(seconds);
       socket.emit("setTimer", { roomId: currentRoom, enabled: !!(timerToggle && timerToggle.checked), duration: seconds });
     });
+  }
+
+  if (timerCustomInput) {
+    // Fire on Enter key or blur when user finishes typing
+    const applyCustomTimer = () => {
+      if (!currentRoom) return;
+      const val = parseInt(timerCustomInput.value, 10);
+      if (isNaN(val) || val < 10 || val > 600) {
+        showToast("Custom timer must be 10 – 600 seconds");
+        timerCustomInput.value = "";
+        return;
+      }
+      // Deactivate preset buttons when custom is set
+      setActiveTimerButton(-1);
+      socket.emit("setTimer", { roomId: currentRoom, enabled: !!(timerToggle && timerToggle.checked), duration: val });
+    };
+    timerCustomInput.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); applyCustomTimer(); } });
+    timerCustomInput.addEventListener("blur", () => { if (timerCustomInput.value) applyCustomTimer(); });
   }
 
   if (languageOptions) {

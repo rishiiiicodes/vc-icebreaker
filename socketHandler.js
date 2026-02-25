@@ -206,14 +206,14 @@ module.exports = function socketHandler(io, logger) {
     });
 
     socket.on("setTimer", ({ roomId, enabled, duration }) => {
-      // Remove noisy console.log
-      if (isRateLimited(socket.id, "setTimer", 1000)) return;
+      if (isRateLimited(socket.id, "setTimer", 500)) return;
       const room = getRoom(roomId);
       if (!room) return;
       normalizeRoomPlayers(room);
       if (!isHost(socket, room)) return;
-      const dur = Number(duration);
-      if (![30, 60, 90].includes(dur)) return;
+      const dur = Math.floor(Number(duration));
+      // Accept any positive integer 10–600 seconds (custom timer support)
+      if (!Number.isFinite(dur) || dur < 10 || dur > 600) return;
       room.timerEnabled = !!enabled;
       room.timerDuration = dur;
       updateActivity(room);
