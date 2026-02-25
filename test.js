@@ -1,0 +1,367 @@
+const { io } = require("socket.io-client");
+const express = require("express");
+const http = require("http");
+const { Server } = require("socket.io");
+const socketHandler = require("./socketHandler");
+
+const URL = "http://127.0.0.1:3000";
+const ROOM = "TESTROOM";
+const TIMEOUT_MS = 4000;
+
+function startTestServer() {
+  return new Promise((resolve) => {
+    const app = express();
+    const server = http.createServer(app);
+    const ioServer = new Server(server, { cors: { origin: "*" } });
+
+    // Mock logger for tests
+    const mockLogger = {
+      info: () => { },
+      error: () => { },
+      warn: () => { },
+      debug: () => { }
+    };
+
+    socketHandler(ioServer, mockLogger);
+    server.listen(3000, "127.0.0.1", () => resolve(server));
+  });
+}
+
+function waitForState(socket, predicate, label) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      cleanup();
+      reject(new Error(label || "Timed out waiting for roomState"));
+    }, TIMEOUT_MS);
+
+    function handler(state) {
+      try {
+        if (predicate(state)) {
+          cleanup();
+          resolve(state);
+        }
+      } catch (err) {
+        cleanup();
+        reject(err);
+      }
+    }
+
+    function cleanup() {
+      clearTimeout(timer);
+      socket.off("roomState", handler);
+    }
+
+    socket.on("roomState", handler);
+  });
+}
+
+function waitForStateWithTimeout(socket, predicate, timeoutMs, label) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      cleanup();
+      reject(new Error(label || "Timed out waiting for roomState"));
+    }, timeoutMs);
+
+    function handler(state) {
+      try {
+        if (predicate(state)) {
+          cleanup();
+          resolve(state);
+        }
+      } catch (err) {
+        cleanup();
+        reject(err);
+      }
+    }
+
+    function cleanup() {
+      clearTimeout(timer);
+      socket.off("roomState", handler);
+    }
+
+    socket.on("roomState", handler);
+  });
+}
+
+function waitForTurnState(socket, expectedTurn) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      cleanup();
+      reject(new Error("Turn cycling failed"));
+    }, TIMEOUT_MS);
+
+    function handler(state) {
+      if (state.currentTurn === expectedTurn) {
+        cleanup();
+        resolve(state);
+      }
+    }
+
+    function cleanup() {
+      clearTimeout(timer);
+      socket.off("roomState", handler);
+    }
+
+    socket.on("roomState", handler);
+  });
+}
+
+function waitForReaction(socket, predicate, timeoutMs, label) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      cleanup();
+      reject(new Error(label || "Timed out waiting for reaction"));
+    }, timeoutMs);
+
+    function handler(payload) {
+      try {
+        if (predicate(payload)) {
+          cleanup();
+          resolve(payload);
+        }
+      } catch (err) {
+        cleanup();
+        reject(err);
+      }
+    }
+
+    function cleanup() {
+      clearTimeout(timer);
+      socket.off("reaction", handler);
+    }
+
+    socket.on("reaction", handler);
+  });
+}
+
+function waitForNoReaction(socket, timeoutMs) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      cleanup();
+      resolve(true);
+    }, timeoutMs);
+
+    function handler(payload) {
+      cleanup();
+      reject(new Error(`Unexpected reaction: ${JSON.stringify(payload)}`));
+    }
+
+    function cleanup() {
+      clearTimeout(timer);
+      socket.off("reaction", handler);
+    }
+
+    socket.on("reaction", handler);
+  });
+}
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function connectSocket() {
+  return new Promise((resolve, reject) => {
+    const socket = io(URL, { transports: ["websocket"], reconnection: false });
+    const timer = setTimeout(() => {
+      socket.disconnect();
+      reject(new Error("Timed out connecting"));
+    }, TIMEOUT_MS);
+    socket.on("connect", () => {
+      clearTimeout(timer);
+      resolve(socket);
+    });
+    socket.on("connect_error", err => {
+      clearTimeout(timer);
+      reject(err);
+    });
+  });
+}
+
+async function run() {
+  const httpServer = await startTestServer();
+  const results = [];
+  const sockets = [];
+
+  const pass = (msg) => results.push({ ok: true, msg });
+  const fail = (msg) => results.push({ ok: false, msg });
+
+  try {
+    const s1 = await connectSocket();
+    sockets.push(s1);
+    let lastState = null;
+    s1.on("roomState", s => { lastState = s; });
+
+    // 1. Room creation
+    console.log("Starting test: Room creation");
+    s1.emit("joinRoom", { roomId: ROOM, name: "Alice" });
+    await waitForState(s1, s => Object.values(s.players || {}).includes("Alice"), "Room creation failed");
+    pass("Room creation");
+
+    // 2. Second player joins
+    console.log("Starting test: Second player joins");
+    await sleep(250); // wait for rate limit window to expire
+    const s2 = await connectSocket();
+    sockets.push(s2);
+    s2.emit("joinRoom", { roomId: ROOM, name: "Bob" });
+    await waitForState(s1, s => s.participants === 2 && Object.values(s.players || {}).includes("Alice") && Object.values(s.players || {}).includes("Bob"), "Second player join failed");
+    pass("Second player joins");
+
+    // 3. Duplicate name handling
+    console.log("Starting test: Duplicate name handling");
+    const s3 = await connectSocket();
+    sockets.push(s3);
+    s3.emit("joinRoom", { roomId: ROOM, name: "Alice" });
+    await waitForState(s1, s => Object.values(s.players || {}).includes("Alice 2"), "Duplicate name handling failed");
+    pass("Duplicate name handling");
+
+    // 4. Category change
+    console.log("Starting test: Category change");
+    s1.emit("changeCategory", { roomId: ROOM, category: "funny" });
+    await waitForState(s1, s => s.category === "funny" && (s.usedIndexes || []).length === 0, "Category change failed");
+    pass("Category change");
+
+    // 5. Next question
+    console.log("Starting test: Next question");
+    s1.emit("nextQuestion", { roomId: ROOM });
+    let state = await waitForState(s1, s => typeof s.currentQuestion === "string" && s.currentQuestion.length > 0 && (s.usedIndexes || []).length === 1, "Next question failed");
+    pass("Next question");
+
+    // 6. Skip question (ensure question changes; retry if same)
+    console.log("Starting test: Skip question");
+    let changed = false;
+    let attempt = 0;
+    let prevQuestion = state.currentQuestion;
+    while (!changed && attempt < 5) {
+      if (attempt > 0) {
+        await sleep(600);
+      }
+      s1.emit("skipQuestion", { roomId: ROOM });
+      state = await waitForState(s1, s => typeof s.currentQuestion === "string" && (s.usedIndexes || []).length === 1, "Skip question failed");
+      changed = state.currentQuestion !== prevQuestion;
+      prevQuestion = state.currentQuestion;
+      attempt += 1;
+    }
+    if (!changed) throw new Error("Skip question did not change the question after 3 attempts");
+    pass("Skip question");
+
+    // 7. Turn cycling
+    console.log("Starting test: Turn cycling");
+    const turns = [];
+    const totalPlayers = state.participants;
+    const startTurn = state.currentTurn;
+    const expected = [];
+    for (let i = 0; i < 3; i += 1) {
+      expected.push((startTurn + 1 + i) % totalPlayers);
+    }
+    for (let i = 0; i < expected.length; i += 1) {
+      await sleep(600);
+      s1.emit("nextQuestion", { roomId: ROOM });
+      const st = await waitForTurnState(s1, expected[i]);
+      turns.push(st.currentTurn);
+    }
+    if (turns.join(",") !== expected.join(",")) {
+      throw new Error(`Turn cycling wrong: got [${turns.join(",")}], expected [${expected.join(",")}]`);
+    }
+    pass("Turn cycling");
+
+    // 8. Emoji reactions
+    console.log("Starting test: Emoji reactions");
+    await sleep(800);
+    const reactionDebug = (r) => {
+      console.log(`REACTION event: ${JSON.stringify(r)}`);
+    };
+    s2.on("reaction", reactionDebug);
+    s1.emit("sendReaction", { roomId: ROOM, emoji: "🔥" });
+    await waitForReaction(s2, r => r.emoji === "🔥" && r.name === "Alice", 2500, "Emoji reaction failed");
+    s2.off("reaction", reactionDebug);
+    await sleep(900);
+    s1.emit("sendReaction", { roomId: ROOM, emoji: "💀" });
+    await waitForNoReaction(s2, 1200);
+    pass("Emoji reactions");
+
+    // 9. Timer settings
+    console.log("Starting test: Timer settings");
+    await sleep(1100);
+    s1.emit("setTimer", { roomId: ROOM, enabled: true, duration: 30 });
+    s1.on("roomState", state => {
+      console.log("Timer test roomState:", JSON.stringify({ timerEnabled: state.timerEnabled, timerDuration: state.timerDuration }));
+    });
+    await waitForState(s1, s => {
+      console.log("Timer state received:", JSON.stringify({ timerEnabled: s.timerEnabled, timerDuration: s.timerDuration }));
+      return s.timerEnabled === true && s.timerDuration === 30;
+    }, "Timer settings failed");
+    await sleep(1100);
+    s1.emit("setTimer", { roomId: ROOM, enabled: true, duration: 999 });
+    await sleep(600);
+    if ((lastState?.timerDuration || 0) !== 30) {
+      throw new Error("Timer invalid duration not rejected");
+    }
+    pass("Timer settings");
+
+    // 10. Scoreboard voting
+    console.log("Starting test: Scoreboard voting");
+    s1.emit("castVote", { roomId: ROOM, votedFor: "Bob" });
+    await waitForState(s1, s => (s.scores && s.scores["Bob"] === 1), "Scoreboard vote failed");
+    s1.emit("castVote", { roomId: ROOM, votedFor: "Bob" });
+    await sleep(600);
+    if ((lastState?.scores?.["Bob"] || 0) !== 1) {
+      throw new Error("Scoreboard double vote not blocked");
+    }
+    s1.emit("castVote", { roomId: ROOM, votedFor: "Alice" });
+    await sleep(600);
+    if ((lastState?.scores?.["Alice"] || 0) !== 0) {
+      throw new Error("Scoreboard self vote not blocked");
+    }
+    pass("Scoreboard voting");
+
+    // 11. Reset room
+    console.log("Starting test: Reset room");
+    s1.emit("resetRoom", ROOM);
+    await waitForState(s1, s => (s.usedIndexes || []).length === 0 && s.currentQuestion === null && s.currentTurn === 0, "Reset room failed");
+    pass("Reset room");
+
+    // 12. Disconnect updates player list
+    console.log("Starting test: Disconnect updates player list");
+    s2.disconnect();
+    let lastPlayers = [];
+    try {
+      await waitForStateWithTimeout(s1, s => {
+        lastPlayers = Object.values(s.players || {});
+        return !lastPlayers.includes("Bob");
+      }, 3000, "Disconnect update failed");
+      pass("Disconnect updates player list");
+    } catch (err) {
+      fail(`Disconnect update failed (players: ${JSON.stringify(lastPlayers)})`);
+    }
+
+    // 13. All categories valid
+    console.log("Starting test: All categories valid");
+    const categories = ["chill", "funny", "spicy", "deep", "chaos", "work", "nostalgia", "creative"];
+    for (const cat of categories) {
+      await sleep(600);
+      s1.emit("changeCategory", { roomId: ROOM, category: cat });
+      await waitForState(s1, s => s.category === cat, `Category ${cat} failed`);
+    }
+    pass("All categories valid");
+
+  } catch (err) {
+    fail(err.message || String(err));
+  } finally {
+    sockets.forEach(s => {
+      try { s.disconnect(); } catch (_) { }
+    });
+  }
+
+  results.forEach(r => {
+    if (r.ok) {
+      console.log(`PASS: ${r.msg}`);
+    } else {
+      console.log(`FAIL: ${r.msg}`);
+    }
+  });
+
+  const failed = results.some(r => !r.ok);
+  process.exit(failed ? 1 : 0);
+}
+
+run();

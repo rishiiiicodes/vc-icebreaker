@@ -1,0 +1,59 @@
+const rooms = {};
+
+function createRoom(category = "chill") {
+  return {
+    category,
+    usedIndexes: [],
+    currentQuestion: null,
+    participants: 0,
+    currentTurn: 0,
+    players: {},
+    scores: {},
+    votedThisRound: {},
+    timerEnabled: false,
+    timerDuration: 60,
+    isLocked: false,
+    lastActivity: Date.now()
+  };
+}
+
+function getRoom(roomId) {
+  return rooms[roomId];
+}
+
+function deleteRoom(roomId) {
+  delete rooms[roomId];
+}
+
+function updateActivity(room) {
+  if (!room) return;
+  room.lastActivity = Date.now();
+}
+
+function startCleanup(io, logger) {
+  setInterval(() => {
+    const now = Date.now();
+    const ttl = 30 * 60 * 1000;
+    Object.keys(rooms).forEach(roomId => {
+      const room = rooms[roomId];
+      if (!room) return;
+      if (!room.lastActivity) return;
+      if (now - room.lastActivity <= ttl) return;
+      const liveRoom = io.sockets.adapter.rooms.get(roomId);
+      if (liveRoom && liveRoom.size > 0) return;
+      delete rooms[roomId];
+      if (logger) {
+        logger.info({ room: roomId }, "ROOM_CLEANUP - inactive");
+      }
+    });
+  }, 5 * 60 * 1000);
+}
+
+module.exports = {
+  rooms,
+  createRoom,
+  getRoom,
+  deleteRoom,
+  updateActivity,
+  startCleanup
+};
