@@ -70,7 +70,9 @@ document.addEventListener("DOMContentLoaded", () => {
     travel: "#38bdf8",
     food: "#f97316",
     music: "#f472b6",
-    gaming: "#818cf8"
+    gaming: "#818cf8",
+    romance: "#ff4d6d",
+    age: "#fbbf24"
   };
 
   let particleLayer = null;
@@ -798,7 +800,87 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  loadTheme();
+  /* ================= THEMES ================= */
+  const THEMES = {
+    classic: {
+      colors: [
+        [0.05, 0.05, 0.14],
+        [0.09, 0.07, 0.22],
+        [0.15, 0.06, 0.25],
+        [0.04, 0.10, 0.20]
+      ]
+    },
+    midnight: {
+      colors: [
+        [0.02, 0.02, 0.05],
+        [0.04, 0.04, 0.08],
+        [0.06, 0.03, 0.10],
+        [0.01, 0.02, 0.04]
+      ]
+    },
+    aura: {
+      colors: [
+        [0.14, 0.05, 0.14],
+        [0.22, 0.07, 0.22],
+        [0.25, 0.06, 0.15],
+        [0.10, 0.04, 0.20]
+      ]
+    },
+    ocean: {
+      colors: [
+        [0.05, 0.14, 0.14],
+        [0.07, 0.22, 0.22],
+        [0.06, 0.25, 0.15],
+        [0.04, 0.20, 0.10]
+      ]
+    },
+    forest: {
+      colors: [
+        [0.05, 0.14, 0.05],
+        [0.07, 0.22, 0.07],
+        [0.06, 0.25, 0.06],
+        [0.04, 0.20, 0.04]
+      ]
+    }
+  };
+
+  let currentTheme = localStorage.getItem("vci_theme") || "classic";
+  let themeUniforms = null;
+
+  function applyTheme(themeId) {
+    if (!THEMES[themeId]) themeId = "classic";
+    currentTheme = themeId;
+    localStorage.setItem("vci_theme", themeId);
+
+    // Update Body Class
+    Object.keys(THEMES).forEach(t => document.body.classList.remove(`theme-${t}`));
+    document.body.classList.add(`theme-${themeId}`);
+
+    // Update Dots UI
+    const dots = document.querySelectorAll(".theme-dot");
+    dots.forEach(dot => {
+      dot.classList.toggle("active", dot.dataset.theme === themeId);
+    });
+
+    // Update Shader Uniforms
+    if (window.updateShaderColors) {
+      window.updateShaderColors(THEMES[themeId].colors);
+    }
+  }
+
+  const themeSelector = document.getElementById("themeSelector");
+  if (themeSelector) {
+    themeSelector.addEventListener("click", e => {
+      const dot = e.target.closest(".theme-dot");
+      if (dot) {
+        applyTheme(dot.dataset.theme);
+        playSound("click");
+      }
+    });
+  }
+
+  // Initial Theme Apply
+  setTimeout(() => applyTheme(currentTheme), 100);
 
   /* ================= PWA INSTALL ================= */
   let deferredPrompt = null;
@@ -917,6 +999,19 @@ document.addEventListener("DOMContentLoaded", () => {
     const aPos = gl.getAttribLocation(prog, "a_position");
     const uRes = gl.getUniformLocation(prog, "u_resolution");
     const uTime = gl.getUniformLocation(prog, "u_time");
+    const uColors = [
+      gl.getUniformLocation(prog, "u_color1"),
+      gl.getUniformLocation(prog, "u_color2"),
+      gl.getUniformLocation(prog, "u_color3"),
+      gl.getUniformLocation(prog, "u_color4")
+    ];
+
+    window.updateShaderColors = (colors) => {
+      gl.useProgram(prog);
+      colors.forEach((c, i) => {
+        gl.uniform3f(uColors[i], c[0], c[1], c[2]);
+      });
+    };
 
     gl.enableVertexAttribArray(aPos);
     gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);

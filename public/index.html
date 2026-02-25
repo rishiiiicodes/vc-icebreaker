@@ -52,6 +52,14 @@
           </div>
         </div>
         <div class="top-actions">
+          <div class="theme-selector" id="themeSelector" aria-label="Select background theme">
+            <button class="theme-dot active" data-theme="classic" title="Classic Theme"
+              style="--dot-color: #18d5c4;"></button>
+            <button class="theme-dot" data-theme="midnight" title="Midnight Theme" style="--dot-color: #444;"></button>
+            <button class="theme-dot" data-theme="aura" title="Aura Theme" style="--dot-color: #ff73b4;"></button>
+            <button class="theme-dot" data-theme="ocean" title="Ocean Theme" style="--dot-color: #38bdf8;"></button>
+            <button class="theme-dot" data-theme="forest" title="Forest Theme" style="--dot-color: #34d399;"></button>
+          </div>
           <button id="installBtn" class="btn ghost hidden">Install App</button>
         </div>
       </div>
@@ -278,6 +286,10 @@
 precision mediump float;
 uniform vec2 u_resolution;
 uniform float u_time;
+uniform vec3 u_color1;
+uniform vec3 u_color2;
+uniform vec3 u_color3;
+uniform vec3 u_color4;
 
 float rand(vec2 n) { return fract(sin(dot(n, vec2(12.9898, 4.1414))) * 43758.5453); }
 
@@ -285,18 +297,13 @@ void main() {
   vec2 st = gl_FragCoord.xy / u_resolution.xy;
   float t = u_time * 0.12;
 
-  vec3 c1 = vec3(0.05, 0.05, 0.14);
-  vec3 c2 = vec3(0.09, 0.07, 0.22);
-  vec3 c3 = vec3(0.15, 0.06, 0.25);
-  vec3 c4 = vec3(0.04, 0.10, 0.20);
-
   float m1 = 0.5 + 0.5 * sin(t + st.x * 2.5 + st.y * 1.8);
   float m2 = 0.5 + 0.5 * sin(t * 1.3 + st.x * 4.0 - st.y * 3.0);
   float m3 = 0.5 + 0.5 * sin(t * 0.7 - st.x * 3.0 + st.y * 5.0);
 
-  vec3 color = mix(c1, c2, m1);
-  color = mix(color, c3, m2 * 0.5);
-  color = mix(color, c4, m3 * 0.4);
+  vec3 color = mix(u_color1, u_color2, m1);
+  color = mix(color, u_color3, m2 * 0.5);
+  color = mix(color, u_color4, m3 * 0.4);
 
   // subtle grain
   float grain = rand(st + vec2(t)) * 0.025;
