@@ -1,0 +1,324 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description"
+    content="Real-time multiplayer icebreaker for video calls. Generate fun questions, chill, or create chaos with your team." />
+  <meta name="theme-color" content="#0d0d1a" />
+  <title>VC Icebreaker</title>
+
+  <meta property="og:title" content="VC Icebreaker" />
+  <meta property="og:description"
+    content="Real-time multiplayer icebreaker for video calls. Fun questions and real-time room energy." />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="/icon-512.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="VC Icebreaker" />
+  <meta name="twitter:description"
+    content="Real-time multiplayer icebreaker for video calls. Fun questions and real-time room energy." />
+  <meta name="twitter:image" content="/icon-512.png" />
+
+  <link rel="icon" href="/icon-192.png" type="image/png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+  <link rel="manifest" href="/manifest.json" />
+</head>
+
+<body>
+
+  <canvas id="bg" aria-hidden="true"></canvas>
+  <canvas id="particles" aria-hidden="true"></canvas>
+
+  <!-- Toast notifications -->
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <div id="reactionStage" aria-hidden="true"></div>
+
+  <main class="app">
+    <section class="card" role="region" aria-labelledby="app-title">
+
+      <!-- Top Bar -->
+      <div class="top-bar reveal" style="--delay: 0ms;">
+        <div class="title-group">
+          <span class="title-icon" aria-hidden="true">&#x1F3A4;</span>
+          <div class="title-stack">
+            <h1 id="app-title" class="title">VC Icebreaker</h1>
+            <span class="subtitle">Real-time room energy, instantly</span>
+          </div>
+        </div>
+        <div class="top-actions">
+          <div class="theme-selector" id="themeSelector" aria-label="Select background theme">
+            <button class="theme-dot active" data-theme="classic" title="Classic Theme"
+              style="--dot-color: #18d5c4;"></button>
+            <button class="theme-dot" data-theme="midnight" title="Midnight Theme" style="--dot-color: #444;"></button>
+            <button class="theme-dot" data-theme="aura" title="Aura Theme" style="--dot-color: #ff73b4;"></button>
+            <button class="theme-dot" data-theme="ocean" title="Ocean Theme" style="--dot-color: #38bdf8;"></button>
+            <button class="theme-dot" data-theme="forest" title="Forest Theme" style="--dot-color: #34d399;"></button>
+          </div>
+          <button id="installBtn" class="btn ghost hidden">Install App</button>
+        </div>
+      </div>
+
+      <!-- Room Join -->
+      <div class="room-section reveal" style="--delay: 80ms;">
+        <div id="inviteNotice" class="invite-notice hidden"></div>
+        <div class="room-join">
+          <div class="room-join-row inputs">
+            <input type="text" id="nameInput" placeholder="Your name" maxlength="20" autocomplete="off"
+              aria-label="Enter your name" spellcheck="false" />
+            <input type="text" id="roomInput" placeholder="Room code (e.g. TEAM42)" maxlength="12" autocomplete="off"
+              aria-label="Enter room code" spellcheck="false" />
+          </div>
+          <div class="room-join-row actions">
+            <button type="button" id="joinBtn" class="btn primary">Join</button>
+            <button type="button" id="generateBtn" class="btn ghost" title="Generate a random room code">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path
+                  d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+                <line x1="12" y1="22.08" x2="12" y2="12" />
+              </svg>
+              Generate
+            </button>
+          </div>
+        </div>
+
+        <div class="room-meta">
+          <p id="roomStatus" class="room-status">Not connected</p>
+          <div id="participantBadge" class="participant-badge hidden" aria-live="polite">
+            <span class="badge-dot" aria-hidden="true"></span>
+            <span id="participantCount">0</span> <span id="participantLabel">in room</span>
+          </div>
+          <p id="playerList" class="player-list hidden"></p>
+          <button type="button" id="shareBtn" class="btn link hidden" aria-label="Copy shareable room link">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="18" cy="5" r="3" />
+              <circle cx="6" cy="12" r="3" />
+              <circle cx="18" cy="19" r="3" />
+              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+            </svg>
+            Share Link
+          </button>
+        </div>
+      </div>
+
+      <!-- Controls -->
+      <div class="controls reveal" style="--delay: 160ms;">
+        <label for="category">Mode</label>
+        <div class="pills-wrapper">
+          <div class="category-pills" role="radiogroup" aria-label="Question category">
+            <button type="button" class="pill" data-value="all" role="radio" aria-checked="false">All &#x1F3B2;</button>
+            <button type="button" class="pill active" data-value="chill" role="radio" aria-checked="true">Chill
+              &#x1F319;</button>
+            <button type="button" class="pill" data-value="funny" role="radio" aria-checked="false">Funny
+              &#x1F602;</button>
+            <button type="button" class="pill" data-value="spicy" role="radio" aria-checked="false">Spicy
+              &#x1F336;&#xFE0F;</button>
+            <button type="button" class="pill" data-value="deep" role="radio" aria-checked="false">Deep
+              &#x1F9E0;</button>
+            <button type="button" class="pill" data-value="chaos" role="radio" aria-checked="false">Chaos
+              &#x1F608;</button>
+            <button type="button" class="pill" data-value="work" role="radio" aria-checked="false">Work
+              &#x1F4BC;</button>
+            <button type="button" class="pill" data-value="nostalgia" role="radio" aria-checked="false">Nostalgia
+              &#x1F4FC;</button>
+            <button type="button" class="pill" data-value="creative" role="radio" aria-checked="false">Creative
+              &#x1F3A8;</button>
+            <button type="button" class="pill" data-value="movies" role="radio" aria-checked="false">Movies
+              &#x1F3AC;</button>
+            <button type="button" class="pill" data-value="sports" role="radio" aria-checked="false">Sports
+              &#x26BD;</button>
+            <button type="button" class="pill" data-value="travel" role="radio" aria-checked="false">Travel
+              &#x2708;&#xFE0F;</button>
+            <button type="button" class="pill" data-value="food" role="radio" aria-checked="false">Food
+              &#x1F355;</button>
+            <button type="button" class="pill" data-value="music" role="radio" aria-checked="false">Music
+              &#x1F3B5;</button>
+            <button type="button" class="pill" data-value="gaming" role="radio" aria-checked="false">Gaming
+              &#x1F3AE;</button>
+            <button type="button" class="pill" data-value="romance" role="radio" aria-checked="false">Romance
+              &#x2764;&#xFE0F;</button>
+            <button type="button" class="pill" data-value="age" role="radio" aria-checked="false">Age
+              &#x23F3;</button>
+          </div>
+        </div>
+        <div class="timer-controls" id="timerControls">
+          <label class="timer-label">
+            <input type="checkbox" id="timerToggle"> Timer
+          </label>
+          <div class="timer-options hidden" id="timerOptions">
+            <button class="timer-btn" data-seconds="30">30s</button>
+            <button class="timer-btn active" data-seconds="60">60s</button>
+            <button class="timer-btn" data-seconds="90">90s</button>
+            <div class="timer-custom">
+              <input type="number" id="timerCustomInput" class="timer-custom-input" min="10" max="600"
+                placeholder="Custom" aria-label="Custom timer duration in seconds" />
+              <span class="timer-custom-unit">s</span>
+            </div>
+          </div>
+        </div>
+        <div class="language-controls" id="languageControls">
+          <span class="language-label">&#x1F310; Language:</span>
+          <div class="language-options" id="languageOptions">
+            <button class="lang-btn active" data-lang="en" title="English">EN</button>
+            <button class="lang-btn" data-lang="hi" title="Hindi">हि</button>
+          </div>
+        </div>
+        <!-- Hidden select for compatibility -->
+        <select id="category" disabled aria-hidden="true" tabindex="-1">
+          <option value="all">All</option>
+          <option value="chill">Chill</option>
+          <option value="funny">Funny</option>
+          <option value="spicy">Spicy</option>
+          <option value="deep">Deep</option>
+          <option value="chaos">Chaos</option>
+          <option value="work">Work</option>
+          <option value="nostalgia">Nostalgia</option>
+          <option value="creative">Creative</option>
+          <option value="movies">Movies</option>
+          <option value="sports">Sports</option>
+          <option value="travel">Travel</option>
+          <option value="food">Food</option>
+          <option value="music">Music</option>
+          <option value="gaming">Gaming</option>
+          <option value="romance">Romance</option>
+          <option value="age">Age</option>
+        </select>
+      </div>
+
+      <!-- Question Display -->
+      <div class="question-area reveal" id="questionArea" style="--delay: 240ms;">
+        <div id="turnBadge" class="turn-badge hidden" aria-live="polite"></div>
+        <div id="timerRing" class="timer-ring hidden">
+          <svg viewBox="0 0 60 60">
+            <circle class="timer-ring-bg" cx="30" cy="30" r="26" />
+            <circle class="timer-ring-fill" id="timerRingFill" cx="30" cy="30" r="26" />
+          </svg>
+          <span id="timerCount" class="timer-count">60</span>
+        </div>
+        <div class="question-card" id="questionCard">
+          <button type="button" id="copyQuestionBtn" class="copy-btn" aria-label="Copy question">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="9" y="9" width="13" height="13" rx="2" />
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+            </svg>
+          </button>
+          <p id="question" class="question" aria-live="polite" aria-atomic="true">Join a room to begin.</p>
+        </div>
+        <div id="doneOverlay" class="done-overlay hidden" aria-live="polite">
+          <span class="done-icon" aria-hidden="true">&#x1F389;</span>
+          <p>All questions used!</p>
+          <span>Reset to play again</span>
+          <div id="leaderboard" class="leaderboard hidden">
+            <p class="leaderboard-title">&#x1F3C6; Leaderboard</p>
+            <ol id="leaderboardList" class="leaderboard-list"></ol>
+          </div>
+        </div>
+        <div class="reaction-bar hidden" id="reactionBar">
+          <button class="reaction-btn" data-emoji="&#x1F525;">&#x1F525;</button>
+          <button class="reaction-btn" data-emoji="&#x1F602;">&#x1F602;</button>
+          <button class="reaction-btn" data-emoji="&#x2764;&#xFE0F;">&#x2764;&#xFE0F;</button>
+          <button class="reaction-btn" data-emoji="&#x1F62E;">&#x1F62E;</button>
+        </div>
+        <div id="votingPanel" class="voting-panel hidden">
+          <p class="voting-label">&#x1F451; Who answered best?</p>
+          <div id="voteList" class="vote-list"></div>
+        </div>
+      </div>
+
+      <!-- Progress -->
+      <div class="progress-wrap reveal" style="--delay: 320ms;">
+        <span class="progress-title">Questions</span>
+        <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"
+          aria-label="Questions progress">
+          <div id="progressFill"></div>
+        </div>
+        <span id="progressLabel" class="progress-label" aria-hidden="true">0 / 0</span>
+      </div>
+
+      <!-- Actions -->
+      <div class="actions reveal" style="--delay: 400ms;">
+        <button type="button" id="nextBtn" class="btn primary large" disabled>
+          Next Question
+          <svg class="btn-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polyline points="9 18 15 12 9 6" />
+          </svg>
+        </button>
+        <button type="button" id="skipBtn" class="btn ghost" disabled>
+          Skip
+          <svg class="btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polygon points="5 3 19 12 5 21 5 3" />
+            <line x1="20" y1="4" x2="20" y2="20" />
+          </svg>
+        </button>
+        <button type="button" id="resetBtn" class="btn secondary" disabled>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polyline points="1 4 1 10 7 10" />
+            <path d="M3.51 15a9 9 0 1 0 .49-3.5" />
+          </svg>
+          Reset
+        </button>
+      </div>
+
+    </section>
+  </main>
+
+  <script src="/socket.io/socket.io.js"></script>
+
+  <script id="vertexShader" type="x-shader/x-vertex">
+    attribute vec2 a_position;
+    void main() { gl_Position = vec4(a_position, 0, 1); }
+  </script>
+
+  <script id="fragmentShader" type="x-shader/x-fragment">
+precision mediump float;
+uniform vec2 u_resolution;
+uniform float u_time;
+uniform vec3 u_color1;
+uniform vec3 u_color2;
+uniform vec3 u_color3;
+uniform vec3 u_color4;
+
+float rand(vec2 n) { return fract(sin(dot(n, vec2(12.9898, 4.1414))) * 43758.5453); }
+
+void main() {
+  vec2 st = gl_FragCoord.xy / u_resolution.xy;
+  float t = u_time * 0.12;
+
+  float m1 = 0.5 + 0.5 * sin(t + st.x * 2.5 + st.y * 1.8);
+  float m2 = 0.5 + 0.5 * sin(t * 1.3 + st.x * 4.0 - st.y * 3.0);
+  float m3 = 0.5 + 0.5 * sin(t * 0.7 - st.x * 3.0 + st.y * 5.0);
+
+  vec3 color = mix(u_color1, u_color2, m1);
+  color = mix(color, u_color3, m2 * 0.5);
+  color = mix(color, u_color4, m3 * 0.4);
+
+  // subtle grain
+  float grain = rand(st + vec2(t)) * 0.025;
+  color += grain;
+
+  gl_FragColor = vec4(color, 1.0);
+}
+  </script>
+
+  <script src="script.js" defer></script>
+  <script>
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js");
+    }
+  </script>
+</body>
+
+</html>
