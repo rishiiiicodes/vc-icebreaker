@@ -15,8 +15,10 @@ const {
 } = require("./rooms/playerManager");
 const {
   VALID_CATEGORIES,
+  VALID_LANGUAGES,
   getTotal,
   changeCategory,
+  changeLanguage,
   nextQuestion,
   skipQuestion,
   resetRoom
@@ -159,6 +161,7 @@ module.exports = function socketHandler(io, logger) {
         assignHost(room, socket.id);
       }
 
+      if (!room.language) room.language = "en";
       if (room.scores[finalName] == null) room.scores[finalName] = 0;
       updateActivity(room);
 
@@ -181,6 +184,23 @@ module.exports = function socketHandler(io, logger) {
       if (!prevCategory) return;
       updateActivity(room);
       if (logger) logger.info({ room: roomId, from: prevCategory, to: safeCategory }, "CATEGORY_CHANGED");
+
+      broadcastState(roomId);
+    });
+
+    socket.on("changeLanguage", ({ roomId, language }) => {
+      if (isRateLimited(socket.id, "changeLanguage", 1000)) return;
+      const room = getRoom(roomId);
+      if (!room) return;
+      normalizeRoomPlayers(room);
+      if (!isHost(socket, room)) return;
+      const safeLang = typeof language === "string" ? language.toLowerCase().replace(/[^a-z]/g, "") : "";
+      if (!VALID_LANGUAGES.includes(safeLang)) return;
+
+      const prevLang = changeLanguage(room, safeLang);
+      if (!prevLang) return;
+      updateActivity(room);
+      if (logger) logger.info({ room: roomId, from: prevLang, to: safeLang }, "LANGUAGE_CHANGED");
 
       broadcastState(roomId);
     });

@@ -7,68 +7,69 @@ document.addEventListener("DOMContentLoaded", () => {
   /* ================= SOCKET.IO ================= */
   const socket = io();
 
-  let currentRoom  = null;
+  let currentRoom = null;
   let currentState = null;
-  let currentName  = "";
+  let currentName = "";
   let currentHostId = null;
   let isHost = true;
 
   /* ================= ELEMENTS ================= */
-  const roomInput         = document.getElementById("roomInput");
-  const nameInput         = document.getElementById("nameInput");
-  const joinBtn           = document.getElementById("joinBtn");
-  const generateBtn       = document.getElementById("generateBtn");
-  const shareBtn          = document.getElementById("shareBtn");
-  const roomStatus        = document.getElementById("roomStatus");
-  const participantBadge  = document.getElementById("participantBadge");
-  const participantCount  = document.getElementById("participantCount");
-  const playerList        = document.getElementById("playerList");
+  const roomInput = document.getElementById("roomInput");
+  const nameInput = document.getElementById("nameInput");
+  const joinBtn = document.getElementById("joinBtn");
+  const generateBtn = document.getElementById("generateBtn");
+  const shareBtn = document.getElementById("shareBtn");
+  const roomStatus = document.getElementById("roomStatus");
+  const participantBadge = document.getElementById("participantBadge");
+  const participantCount = document.getElementById("participantCount");
+  const playerList = document.getElementById("playerList");
   const categoryPillsWrap = document.querySelector(".category-pills");
-  const categorySelect    = document.getElementById("category");
-  const questionEl        = document.getElementById("question");
-  const questionCard      = document.getElementById("questionCard");
-  const turnBadge         = document.getElementById("turnBadge");
-  const copyQuestionBtn   = document.getElementById("copyQuestionBtn");
-  const reactionBar       = document.getElementById("reactionBar");
-  const reactionStage     = document.getElementById("reactionStage");
-  const votingPanel       = document.getElementById("votingPanel");
-  const voteList          = document.getElementById("voteList");
-  const leaderboard       = document.getElementById("leaderboard");
-  const leaderboardList   = document.getElementById("leaderboardList");
-  const timerToggle       = document.getElementById("timerToggle");
-  const timerOptions      = document.getElementById("timerOptions");
-  const timerRing         = document.getElementById("timerRing");
-  const timerRingFill     = document.getElementById("timerRingFill");
-  const timerCount        = document.getElementById("timerCount");
-  const doneOverlay       = document.getElementById("doneOverlay");
-  const progressFill      = document.getElementById("progressFill");
-  const progressBar       = document.querySelector(".progress");
-  const progressLabel     = document.getElementById("progressLabel");
-  const nextBtn           = document.getElementById("nextBtn");
-  const skipBtn           = document.getElementById("skipBtn");
-  const resetBtn          = document.getElementById("resetBtn");
-  const toastEl           = document.getElementById("toast");
-  const cardEl            = document.querySelector(".card");
-  const subtitleEl        = document.querySelector(".subtitle");
-  const defaultSubtitle   = subtitleEl ? subtitleEl.textContent : "";
+  const categorySelect = document.getElementById("category");
+  const questionEl = document.getElementById("question");
+  const questionCard = document.getElementById("questionCard");
+  const turnBadge = document.getElementById("turnBadge");
+  const copyQuestionBtn = document.getElementById("copyQuestionBtn");
+  const reactionBar = document.getElementById("reactionBar");
+  const reactionStage = document.getElementById("reactionStage");
+  const votingPanel = document.getElementById("votingPanel");
+  const voteList = document.getElementById("voteList");
+  const leaderboard = document.getElementById("leaderboard");
+  const leaderboardList = document.getElementById("leaderboardList");
+  const timerToggle = document.getElementById("timerToggle");
+  const timerOptions = document.getElementById("timerOptions");
+  const timerRing = document.getElementById("timerRing");
+  const timerRingFill = document.getElementById("timerRingFill");
+  const timerCount = document.getElementById("timerCount");
+  const languageOptions = document.getElementById("languageOptions");
+  const doneOverlay = document.getElementById("doneOverlay");
+  const progressFill = document.getElementById("progressFill");
+  const progressBar = document.querySelector(".progress");
+  const progressLabel = document.getElementById("progressLabel");
+  const nextBtn = document.getElementById("nextBtn");
+  const skipBtn = document.getElementById("skipBtn");
+  const resetBtn = document.getElementById("resetBtn");
+  const toastEl = document.getElementById("toast");
+  const cardEl = document.querySelector(".card");
+  const subtitleEl = document.querySelector(".subtitle");
+  const defaultSubtitle = subtitleEl ? subtitleEl.textContent : "";
 
   /* ================= PARTICLE COLORS ================= */
   const particlePalette = {
-    chill:     "#18d5c4",
-    funny:     "#f6b25b",
-    spicy:     "#f45348",
-    deep:      "#7ce7ff",
-    chaos:     "#ff73b4",
-    work:      "#4ade80",
+    chill: "#18d5c4",
+    funny: "#f6b25b",
+    spicy: "#f45348",
+    deep: "#7ce7ff",
+    chaos: "#ff73b4",
+    work: "#4ade80",
     nostalgia: "#fb923c",
-    creative:  "#e879f9",
-    all:       "#ffffff",
-    movies:    "#a78bfa",
-    sports:    "#34d399",
-    travel:    "#38bdf8",
-    food:      "#f97316",
-    music:     "#f472b6",
-    gaming:    "#818cf8"
+    creative: "#e879f9",
+    all: "#ffffff",
+    movies: "#a78bfa",
+    sports: "#34d399",
+    travel: "#38bdf8",
+    food: "#f97316",
+    music: "#f472b6",
+    gaming: "#818cf8"
   };
 
   let particleLayer = null;
@@ -202,10 +203,10 @@ document.addEventListener("DOMContentLoaded", () => {
   function loadSounds() {
     if (soundReady) return;
     ["click", "complete", "reset"].forEach(key => {
-      const audio  = new Audio(`${key}.mp3`);
+      const audio = new Audio(`${key}.mp3`);
       audio.preload = "auto";
-      audio.volume  = 0.5;
-      sounds[key]   = audio;
+      audio.volume = 0.5;
+      sounds[key] = audio;
     });
     soundReady = true;
   }
@@ -213,7 +214,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function playSound(name) {
     if (!sounds[name]) return;
     sounds[name].currentTime = 0;
-    sounds[name].play().catch(() => {});
+    sounds[name].play().catch(() => { });
   }
 
   document.addEventListener("click", loadSounds, { once: true });
@@ -228,13 +229,13 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   /* ================= ROOM CODE GENERATOR ================= */
-  const ADJS  = ["CHILL","EPIC","WILD","COOL","BOLD","FAST","KEEN","ZANY","MINT","NEON"];
-  const NOUNS = ["TEAM","CREW","PACK","GANG","CLUB","BAND","UNIT","HIVE","TRIO","QUAD"];
+  const ADJS = ["CHILL", "EPIC", "WILD", "COOL", "BOLD", "FAST", "KEEN", "ZANY", "MINT", "NEON"];
+  const NOUNS = ["TEAM", "CREW", "PACK", "GANG", "CLUB", "BAND", "UNIT", "HIVE", "TRIO", "QUAD"];
 
   function generateRoomCode() {
-    const adj  = ADJS[Math.floor(Math.random() * ADJS.length)];
+    const adj = ADJS[Math.floor(Math.random() * ADJS.length)];
     const noun = NOUNS[Math.floor(Math.random() * NOUNS.length)];
-    const num  = Math.floor(Math.random() * 99) + 1;
+    const num = Math.floor(Math.random() * 99) + 1;
     return `${adj}${noun}${num}`;
   }
 
@@ -261,7 +262,7 @@ document.addEventListener("DOMContentLoaded", () => {
       try {
         await navigator.share({ title: "VC Icebreaker", text: `Join room ${currentRoom}`, url });
         return;
-      } catch (_) {}
+      } catch (_) { }
     }
     try {
       await navigator.clipboard.writeText(url);
@@ -301,7 +302,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function enableGameUI(on) {
     getPills().forEach(p => p.disabled = !on);
-    nextBtn.disabled  = !on;
+    nextBtn.disabled = !on;
     if (skipBtn) skipBtn.disabled = !on;
     resetBtn.disabled = !on;
     updateHostControls();
@@ -339,11 +340,11 @@ document.addEventListener("DOMContentLoaded", () => {
     questionCard.classList.remove("is-animating");
     void questionCard.offsetWidth; // force reflow
     questionCard.classList.add("is-animating");
-    questionEl.style.opacity   = "0";
+    questionEl.style.opacity = "0";
     questionEl.style.transform = "translateY(12px)";
     questionAnimId = setTimeout(() => {
-      questionEl.textContent     = text || "Click Next Question to begin.";
-      questionEl.style.opacity   = "1";
+      questionEl.textContent = text || "Click Next Question to begin.";
+      questionEl.style.opacity = "1";
       questionEl.style.transform = "translateY(0)";
     }, 200);
   }
@@ -352,8 +353,8 @@ document.addEventListener("DOMContentLoaded", () => {
     currentState = state;
     clearPendingPills();
 
-    const used   = state.usedIndexes?.length || 0;
-    const total  = state.total || 0;
+    const used = state.usedIndexes?.length || 0;
+    const total = state.total || 0;
     const isDone = used >= total && total > 0 && state.currentQuestion === null;
     const hasQuestion = !!state.currentQuestion;
 
@@ -452,6 +453,15 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
     lastTimerDuration = state.timerDuration || 60;
+
+    // Sync language button active state
+    if (languageOptions) {
+      const currentLang = state.language || "en";
+      languageOptions.querySelectorAll(".lang-btn").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.lang === currentLang);
+        btn.disabled = !isHost;
+      });
+    }
 
     if (isDone) {
       doneOverlay.classList.remove("hidden");
@@ -690,6 +700,17 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  if (languageOptions) {
+    languageOptions.addEventListener("click", e => {
+      const btn = e.target.closest(".lang-btn");
+      if (!btn || btn.disabled || !currentRoom) return;
+      const lang = btn.dataset.lang;
+      if (!lang) return;
+      socket.emit("changeLanguage", { roomId: currentRoom, language: lang });
+      playSound("click");
+    });
+  }
+
   if (voteList) {
     voteList.addEventListener("click", e => {
       const btn = e.target.closest(".vote-btn");
@@ -789,8 +810,8 @@ document.addEventListener("DOMContentLoaded", () => {
       cardEl.style.transform =
         `translate3d(${cx * MAX_SHIFT}px, ${cy * MAX_SHIFT}px, 0) ` +
         `rotateX(${cy * MAX_TILT}deg) rotateY(${cx * MAX_TILT * -1}deg)`;
-      document.body.style.setProperty("--orb-x",  `${cx * 30}px`);
-      document.body.style.setProperty("--orb-y",  `${cy * 22}px`);
+      document.body.style.setProperty("--orb-x", `${cx * 30}px`);
+      document.body.style.setProperty("--orb-y", `${cy * 22}px`);
       document.body.style.setProperty("--orb2-x", `${cx * -22}px`);
       document.body.style.setProperty("--orb2-y", `${cy * 18}px`);
       if (particleLayer) particleLayer.setParallax(cx, cy);
@@ -802,7 +823,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     window.addEventListener("mousemove", e => {
-      tx = (e.clientX - window.innerWidth  / 2) / (window.innerWidth  / 2);
+      tx = (e.clientX - window.innerWidth / 2) / (window.innerWidth / 2);
       ty = (e.clientY - window.innerHeight / 2) / (window.innerHeight / 2);
       start();
     });
@@ -821,7 +842,7 @@ document.addEventListener("DOMContentLoaded", () => {
     window.addEventListener("deviceorientation", e => {
       if (e.beta == null || e.gamma == null) return;
       tx = Math.max(-1, Math.min(1, e.gamma / 25));
-      ty = Math.max(-1, Math.min(1, e.beta  / 25));
+      ty = Math.max(-1, Math.min(1, e.beta / 25));
       start();
     });
   })();
@@ -834,7 +855,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!gl) return;
 
     function resize() {
-      canvas.width  = window.innerWidth;
+      canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
       gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
     }
@@ -852,7 +873,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return s;
     }
 
-    const vs = compile(gl.VERTEX_SHADER,   document.getElementById("vertexShader").text);
+    const vs = compile(gl.VERTEX_SHADER, document.getElementById("vertexShader").text);
     const fs = compile(gl.FRAGMENT_SHADER, document.getElementById("fragmentShader").text);
     if (!vs || !fs) return;
 
@@ -864,10 +885,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const buf = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1,1,-1,-1,1,-1,1,1,-1,1,1]), gl.STATIC_DRAW);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]), gl.STATIC_DRAW);
 
-    const aPos  = gl.getAttribLocation(prog, "a_position");
-    const uRes  = gl.getUniformLocation(prog, "u_resolution");
+    const aPos = gl.getAttribLocation(prog, "a_position");
+    const uRes = gl.getUniformLocation(prog, "u_resolution");
     const uTime = gl.getUniformLocation(prog, "u_time");
 
     gl.enableVertexAttribArray(aPos);
@@ -903,14 +924,14 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function resize() {
-      w = canvas.width  = window.innerWidth;
+      w = canvas.width = window.innerWidth;
       h = canvas.height = window.innerHeight;
       const count = Math.min(90, Math.floor((w * h) / 28000));
       particles = Array.from({ length: count }, () => ({
-        x:  Math.random() * w,
-        y:  Math.random() * h,
-        r:  0.6 + Math.random() * 1.8,
-        a:  0.15 + Math.random() * 0.35,
+        x: Math.random() * w,
+        y: Math.random() * h,
+        r: 0.6 + Math.random() * 1.8,
+        a: 0.15 + Math.random() * 0.35,
         vx: (Math.random() - 0.5) * 0.3,
         vy: (Math.random() - 0.5) * 0.24
       }));
@@ -932,9 +953,9 @@ document.addEventListener("DOMContentLoaded", () => {
       for (const p of particles) {
         p.x += p.vx;
         p.y += p.vy;
-        if (p.x < -20)    p.x = w + 20;
+        if (p.x < -20) p.x = w + 20;
         if (p.x > w + 20) p.x = -20;
-        if (p.y < -20)    p.y = h + 20;
+        if (p.y < -20) p.y = h + 20;
         if (p.y > h + 20) p.y = -20;
 
         ctx.beginPath();
@@ -951,7 +972,7 @@ document.addEventListener("DOMContentLoaded", () => {
     draw();
 
     return {
-      setMode(hex)      { tgt = hexToRgb(hex); },
+      setMode(hex) { tgt = hexToRgb(hex); },
       setParallax(x, y) { pxOff = x * 12; pyOff = y * 10; }
     };
   })();

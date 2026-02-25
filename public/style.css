@@ -987,3 +987,50 @@ body.gaming    { --category-color: #818cf8; --category-color-rgb: 129,140,248; }
   .reveal { opacity: 1; transform: none; }
   #particles { display: none; }
 }
+
+/* ===== LANGUAGE CONTROLS ===== */
+.language-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+.language-label {
+  font-size: 12px;
+  color: var(--text-muted, rgba(255,255,255,0.5));
+  font-weight: 500;
+  white-space: nowrap;
+}
+.language-options {
+  display: flex;
+  gap: 4px;
+}
+.lang-btn {
+  padding: 4px 11px;
+  font-size: 13px;
+  font-family: inherit;
+  font-weight: 600;
+  border-radius: 20px;
+  border: 1.5px solid rgba(255,255,255,0.15);
+  background: transparent;
+  color: rgba(255,255,255,0.5);
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+.lang-btn:hover:not(:disabled) {
+  border-color: rgba(255,255,255,0.4);
+  color: rgba(255,255,255,0.9);
+}
+.lang-btn.active {
+  background: rgba(255,255,255,0.12);
+  border-color: rgba(255,255,255,0.5);
+  color: #fff;
+}
+.lang-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+body.light .language-label { color: rgba(0,0,0,0.45); }
+body.light .lang-btn { color: rgba(0,0,0,0.45); border-color: rgba(0,0,0,0.15); }
+body.light .lang-btn:hover:not(:disabled) { color: rgba(0,0,0,0.85); border-color: rgba(0,0,0,0.4); }
+body.light .lang-btn.active { background: rgba(0,0,0,0.08); border-color: rgba(0,0,0,0.45); color: #000; }
