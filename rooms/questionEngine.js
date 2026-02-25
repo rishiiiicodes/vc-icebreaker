@@ -690,13 +690,22 @@ function changeCategory(room, category) {
 function changeLanguage(room, language) {
   if (!room || !VALID_LANGUAGES.includes(language)) return null;
   const prevLanguage = room.language || "en";
+  if (prevLanguage === language) return prevLanguage;
 
+  // Find the index of the current question in the old language pool
+  const oldPool = (QUESTIONS[prevLanguage] || QUESTIONS.en)[room.category] || [];
+  const currentIdx = room.currentQuestion != null ? oldPool.indexOf(room.currentQuestion) : -1;
+
+  // Switch language
   room.language = language;
-  room.usedIndexes = [];
-  room.currentQuestion = null;
-  room.currentTurn = 0;
-  room.votedThisRound = {};
-  room.scores = {};
+
+  // Translate the current question to the same index in the new language pool
+  // (question arrays are ordered 1-to-1 across languages)
+  if (currentIdx >= 0) {
+    const newPool = (QUESTIONS[language] || QUESTIONS.en)[room.category] || [];
+    room.currentQuestion = newPool[currentIdx] != null ? newPool[currentIdx] : room.currentQuestion;
+  }
+  // usedIndexes, scores, currentTurn, votedThisRound are intentionally preserved
 
   return prevLanguage;
 }
