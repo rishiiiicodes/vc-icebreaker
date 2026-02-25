@@ -313,6 +313,40 @@ const QUESTIONS = {
       "If you could design your own game, what's the concept?",
       "What's your go-to game when you just want to zone out?",
       "Board games or video games \u2014 which brings out your competitive side more?"
+    ],
+    romance: [
+      "First crush story - go!",
+      "What's your biggest dealbreaker in a relationship?",
+      "Ideal date night: stay in or go out?",
+      "What's the most romantic thing someone has done for you?",
+      "Do you believe in love at first sight?",
+      "What's your love language?",
+      "What's the most important quality in a partner?",
+      "Best relationship advice you've ever heard?",
+      "Worst date you've ever been on?",
+      "How do you know when you're in love?",
+      "What's something you're still learning about relationships?",
+      "Do you believe in soulmates?",
+      "What's a small gesture that means a lot to you?",
+      "How do you handle conflict in a relationship?",
+      "What's the best thing about being in a relationship?"
+    ],
+    age: [
+      "What's something you wish you'd known 10 years ago?",
+      "How has your perspective on life changed as you've gotten older?",
+      "What's been the most transformative year of your life so far?",
+      "What are you most looking forward to in the next decade?",
+      "What's a piece of wisdom you'd give to your younger self?",
+      "How do you define 'growing up'?",
+      "What's something you've outgrown that surprised you?",
+      "What's your favorite age you've been so far and why?",
+      "What's a life lesson you learned the hard way?",
+      "How do you want to be remembered when you're older?",
+      "What's the biggest difference between you now and you five years ago?",
+      "What's something you're more comfortable with now than you used to be?",
+      "What's a goal you've achieved that took years of work?",
+      "How do you define 'success' at this stage in your life?",
+      "What's been the most challenging stage of your life so far?"
     ]
   },
 
@@ -629,6 +663,40 @@ const QUESTIONS = {
       "अपना game design करो — concept क्या होगा?",
       "Zone out करने के लिए go-to game?",
       "Board games या video games — competitive side किसमें ज़्यादा आता है?"
+    ],
+    romance: [
+      "पहले क्रश की कहानी बताओ!",
+      "रिश्ते में आपके लिए सबसे बड़ी dealbreaker क्या है?",
+      "आदर्श डेट नाईट: घर पर रहना या बाहर जाना?",
+      "किसी ने आपके लिए सबसे रोमांटिक काम क्या किया है?",
+      "क्या आप पहली नज़र के प्यार में विश्वास करते हैं?",
+      "आपकी प्यार की भाषा (love language) क्या है?",
+      "पार्टनर में सबसे महत्वपूर्ण गुण क्या है?",
+      "रिश्ते की सबसे अच्छी सलाह जो आपने सुनी है?",
+      "अब तक की सबसे खराब डेट?",
+      "आपको कैसे पता चलता है कि आप प्यार में हैं?",
+      "रिश्तों के बारे में आप अभी भी क्या सीख रहे हैं?",
+      "क्या आप सोलमेट्स (soulmates) में विश्वास करते हैं?",
+      "एक छोटा सा इशारा जो आपके लिए बहुत मायने रखता है?",
+      "आप रिश्ते में संघर्ष को कैसे संभालते हैं?",
+      "रिश्ते में रहने की सबसे अच्छी बात क्या है?"
+    ],
+    age: [
+      "ऐसी कौन सी बात है जो आप काश 10 साल पहले जानते?",
+      "उम्र के साथ जीवन के प्रति आपका नजरिया कैसे बदला है?",
+      "अब तक आपके जीवन का सबसे परिवर्तनकारी वर्ष कौन सा रहा है?",
+      "अगले दशक में आप किस चीज़ का सबसे ज़्यादा इंतज़ार कर रहे हैं?",
+      "आप अपने छोटे स्वरूप (younger self) को क्या सलाह देंगे?",
+      "आप 'बड़ा होने' (growing up) को कैसे परिभाषित करते हैं?",
+      "ऐसी कौन सी चीज़ है जिससे आप आगे निकल गए हैं और जिसने आपको चौंका दिया?",
+      "अब तक आपकी पसंदीदा उम्र कौन सी रही है और क्यों?",
+      "जीवन का वह सबक जो आपने मुश्किल तरीके से सीखा?",
+      "जब आप बड़े होंगे तो आप कैसे याद किया जाना चाहते हैं?",
+      "अब और पांच साल पहले के आप में सबसे बड़ा अंतर क्या है?",
+      "ऐसी कौन सी चीज़ है जिसमें आप अब पहले से ज़्यादा कंफर्टेबल हैं?",
+      "एक ऐसा लक्ष्य जिसे आपने सालों की मेहनत के बाद हासिल किया?",
+      "जीवन के इस पड़ाव पर आप 'सफलता' को कैसे परिभाषित करते हैं?",
+      "अब तक आपके जीवन का सबसे चुनौतीपूर्ण चरण कौन सा रहा है?"
     ]
   }
 };
