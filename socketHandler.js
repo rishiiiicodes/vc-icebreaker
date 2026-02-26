@@ -182,7 +182,6 @@ module.exports = function socketHandler(io, logger) {
       const room = getRoom(roomId);
       if (!room) return;
       normalizeRoomPlayers(room);
-      if (!isHost(socket, room)) return;
       const safeCategory = typeof category === "string"
         ? category.toLowerCase().replace(/[^a-z]/g, "")
         : "";

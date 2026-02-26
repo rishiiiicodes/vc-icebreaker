@@ -356,8 +356,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!currentRoom) return;
     const canHost = !!isHost;
 
-    // Settings only for host
-    getPills().forEach(p => p.disabled = !canHost);
+    // Settings only for host (category can be changed by any player)
     if (resetBtn) resetBtn.disabled = !canHost;
     if (timerToggle) timerToggle.disabled = !canHost;
     if (timerOptions) {
