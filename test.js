@@ -380,7 +380,35 @@ async function run() {
 
     pass("Host Ownership Transfer");
 
-    // 14. All categories valid
+    // 14. Shared Turn Control
+    console.log("Starting test: Shared Turn Control");
+    s1.emit("nextQuestion", { roomId: ROOM });
+    const stateStart = await waitForState(s1, s => !!s.currentQuestion, "Failed to start question for turn test");
+    console.log(`Current Turn: ${stateStart.currentTurn}, Players:`, Object.values(stateStart.players || {}));
+
+    // Names might be { [id]: name } or { [id]: { name } } depending on normalize
+    // Actually state.players is usually { [id]: name } in the simple broadcast logic
+    const names = Object.values(stateStart.players || {});
+
+    // Advance until it's Charlie's turn
+    let attempts = 0;
+    let currentState = stateStart;
+    while (attempts < 5) {
+      const idx = ((currentState.currentTurn % names.length) + names.length) % names.length;
+      console.log(`Attempt ${attempts}: idx=${idx}, names[idx]=${names[idx]}, CharlieId=${s2_new.id}`);
+      if (names[idx] === "Charlie") break;
+      s1.emit("nextQuestion", { roomId: ROOM });
+      currentState = await waitForState(s1, s => s.currentTurn !== currentState.currentTurn, "Turn failed to advance");
+      attempts++;
+    }
+
+    const prevQ = currentState.currentQuestion;
+    console.log("Charlie now emitting nextQuestion...");
+    s2_new.emit("nextQuestion", { roomId: ROOM });
+    await waitForState(s1, s => s.currentQuestion !== prevQ, "Charlie (non-host) failed to advance turn");
+    pass("Shared Turn Control");
+
+    // 15. All categories valid
     console.log("Starting test: All categories valid");
     const categories = ["chill", "funny", "spicy", "deep", "chaos", "work", "nostalgia", "creative"];
     for (const cat of categories) {
@@ -389,6 +417,18 @@ async function run() {
       await waitForState(s1, s => s.category === cat, `Category ${cat} failed`);
     }
     pass("All categories valid");
+
+    // 16. Hinglish Language Support
+    console.log("Starting test: Hinglish Language Support");
+    s1.emit("changeLanguage", { roomId: ROOM, language: "hinglish" });
+    await waitForState(s1, s => s.language === "hinglish", "Hinglish language change failed");
+    s1.emit("nextQuestion", { roomId: ROOM });
+    const hState = await waitForState(s1, s => !!s.currentQuestion, "Hinglish question failed to load");
+    // Hinglish should use Roman characters
+    if (!/[a-zA-Z]/.test(hState.currentQuestion)) {
+      throw new Error(`Expected Hinglish question to contain Roman characters: ${hState.currentQuestion}`);
+    }
+    pass("Hinglish Language Support");
 
   } catch (err) {
     fail(err.message || String(err));

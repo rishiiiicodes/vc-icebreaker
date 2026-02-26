@@ -9,6 +9,7 @@ const {
 const {
   normalizeRoomPlayers,
   isHost,
+  isTurn,
   assignHost,
   reassignHost,
   getPlayerNames
@@ -243,7 +244,7 @@ module.exports = function socketHandler(io, logger) {
       const room = getRoom(roomId);
       if (!room) return;
       normalizeRoomPlayers(room);
-      if (!isHost(socket, room)) return;
+      if (!isHost(socket, room) && !isTurn(socket.id, room)) return;
 
       const nameCount = getPlayerNames(room).length;
       const question = nextQuestion(room, nameCount);
@@ -259,7 +260,7 @@ module.exports = function socketHandler(io, logger) {
       if (!room) return;
 
       normalizeRoomPlayers(room);
-      if (!isHost(socket, room)) return;
+      if (!isHost(socket, room) && !isTurn(socket.id, room)) return;
 
       const question = skipQuestion(room);
       if (!question) return;

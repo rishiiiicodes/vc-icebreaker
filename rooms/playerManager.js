@@ -58,9 +58,19 @@ function reassignHost(room) {
   return nextHost.id || null;
 }
 
+function isTurn(socketId, room) {
+  if (!room || !room.players || !socketId) return false;
+  normalizeRoomPlayers(room);
+  const players = Object.values(room.players);
+  if (players.length === 0) return false;
+  const idx = ((Number(room.currentTurn || 0) % players.length) + players.length) % players.length;
+  return players[idx]?.id === socketId;
+}
+
 module.exports = {
   normalizeRoomPlayers,
   isHost,
+  isTurn,
   assignHost,
   reassignHost,
   getPlayerNames

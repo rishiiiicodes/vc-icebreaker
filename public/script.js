@@ -21,7 +21,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentState = null;
   let currentName = "";
   let currentHostId = null;
-  let isHost = true;
+  let isHost = false;
 
   /* ================= ELEMENTS ================= */
   const roomInput = document.getElementById("roomInput");
@@ -59,12 +59,25 @@ document.addEventListener("DOMContentLoaded", () => {
   const nextBtn = document.getElementById("nextBtn");
   const skipBtn = document.getElementById("skipBtn");
   const resetBtn = document.getElementById("resetBtn");
+  const leaveBtn = document.getElementById("leaveBtn");
   const categoryScoreboard = document.getElementById("categoryScoreboard");
   const categoryScoreList = document.getElementById("categoryScoreList");
   const toastEl = document.getElementById("toast");
   const cardEl = document.querySelector(".card");
   const subtitleEl = document.querySelector(".subtitle");
   const defaultSubtitle = subtitleEl ? subtitleEl.textContent : "";
+
+  // Lobby Sub-screens
+  const lobbyHome = document.getElementById("lobbyHome");
+  const lobbyHost = document.getElementById("lobbyHost");
+  const lobbyJoin = document.getElementById("lobbyJoin");
+  const goHostBtn = document.getElementById("goHostBtn");
+  const goJoinBtn = document.getElementById("goJoinBtn");
+  const backToHomeHost = document.getElementById("backToHomeHost");
+  const backToHomeJoin = document.getElementById("backToHomeJoin");
+  const createBtn = document.getElementById("createBtn");
+  const nameInputHost = document.getElementById("nameInputHost");
+  const nameInputJoin = document.getElementById("nameInputJoin");
 
   /* ================= PARTICLE COLORS ================= */
   const particlePalette = {
@@ -84,7 +97,11 @@ document.addEventListener("DOMContentLoaded", () => {
     music: "#f472b6",
     gaming: "#818cf8",
     romance: "#ff4d6d",
-    age: "#fbbf24"
+    journey: "#fbbf24",
+    mystery: "#6366f1",
+    tech: "#0ea5e9",
+    party: "#fcd34d",
+    soulful: "#ec4899"
   };
 
   const categoryRgbPalette = {
@@ -104,7 +121,11 @@ document.addEventListener("DOMContentLoaded", () => {
     music: "244, 114, 182",
     gaming: "129, 140, 248",
     romance: "255, 77, 109",
-    age: "251, 191, 36"
+    journey: "251, 191, 36",
+    mystery: "99, 102, 241",
+    tech: "14, 165, 233",
+    party: "252, 211, 77",
+    soulful: "236, 72, 153"
   };
 
   let particleLayer = null;
@@ -327,11 +348,12 @@ document.addEventListener("DOMContentLoaded", () => {
     return categoryPillsWrap ? [...categoryPillsWrap.querySelectorAll(".pill")] : [];
   }
 
-  function updateHostControls() {
-    const canHost = !!currentRoom && !!isHost;
+  function updateHostControls(state = currentState) {
+    if (!currentRoom) return;
+    const canHost = !!isHost;
+
+    // Settings only for host
     getPills().forEach(p => p.disabled = !canHost);
-    if (nextBtn) nextBtn.disabled = !canHost;
-    if (skipBtn) skipBtn.disabled = !canHost;
     if (resetBtn) resetBtn.disabled = !canHost;
     if (timerToggle) timerToggle.disabled = !canHost;
     if (timerOptions) {
@@ -339,15 +361,52 @@ document.addEventListener("DOMContentLoaded", () => {
       buttons.forEach(btn => { btn.disabled = !canHost; });
     }
     if (timerCustomInput) timerCustomInput.disabled = !canHost;
+
+    // Progression: Host OR whose turn it is
+    let isMyTurn = false;
+    if (state && state.players) {
+      const names = Object.values(state.players);
+      if (names.length > 0) {
+        const idxRaw = typeof state.currentTurn === "number" ? state.currentTurn : 0;
+        const idx = ((idxRaw % names.length) + names.length) % names.length;
+        isMyTurn = names[idx] === currentName;
+      }
+    }
+    const canProgress = (canHost || isMyTurn) && !!currentRoom;
+    if (nextBtn) nextBtn.disabled = !canProgress;
+    if (skipBtn) skipBtn.disabled = !canProgress;
   }
 
   function enableGameUI(on) {
+    const lobby = document.getElementById("lobbyScreen");
+    const game = document.getElementById("gameScreen");
+    if (lobby) lobby.classList.toggle("hidden", on);
+    if (game) game.classList.toggle("hidden", !on);
+    if (leaveBtn) leaveBtn.classList.toggle("hidden", !on);
+
+    // Reset lobby sub-screens when going back to lobby
+    if (!on) showLobbySubScreen("lobbyHome");
+
     getPills().forEach(p => p.disabled = !on);
     nextBtn.disabled = !on;
     if (skipBtn) skipBtn.disabled = !on;
     resetBtn.disabled = !on;
     updateHostControls();
   }
+
+  function showLobbySubScreen(id) {
+    if (!lobbyHome || !lobbyHost || !lobbyJoin) return;
+    lobbyHome.classList.add("hidden");
+    lobbyHost.classList.add("hidden");
+    lobbyJoin.classList.add("hidden");
+    const el = document.getElementById(id);
+    if (el) el.classList.remove("hidden");
+  }
+
+  if (goHostBtn) goHostBtn.onclick = () => showLobbySubScreen("lobbyHost");
+  if (goJoinBtn) goJoinBtn.onclick = () => showLobbySubScreen("lobbyJoin");
+  if (backToHomeHost) backToHomeHost.onclick = () => showLobbySubScreen("lobbyHome");
+  if (backToHomeJoin) backToHomeJoin.onclick = () => showLobbySubScreen("lobbyHome");
 
   function setActivePill(category) {
     getPills().forEach(p => {
@@ -607,43 +666,65 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   /* ================= JOIN ROOM ================= */
-  function doJoin() {
-    const roomId = roomInput.value.trim().toUpperCase();
-    if (!roomId) { roomInput.focus(); return; }
+  function doJoin(customName, customRoom) {
+    let name = (customName || "").trim();
+    let room = (customRoom || roomInput.value).trim().toUpperCase();
 
-    currentState = null;
-    currentRoom = roomId;
-    const rawName = nameInput ? nameInput.value : "";
-    currentName = typeof rawName === "string" ? rawName.trim().slice(0, 20) : "";
-    if (!currentName) {
-      showToast("Please enter your name first.");
-      if (nameInput) {
-        nameInput.classList.add("shake");
-        nameInput.focus();
-        setTimeout(() => nameInput.classList.remove("shake"), 600);
-      }
-      return;
+    if (!customName) {
+      if (!lobbyHost.classList.contains("hidden")) name = nameInputHost.value.trim();
+      else if (!lobbyJoin.classList.contains("hidden")) name = nameInputJoin.value.trim();
     }
-    socket.emit("joinRoom", { roomId, name: currentName });
-    roomStatus.textContent = `Room: ${roomId}`;
-    if (subtitleEl) subtitleEl.textContent = `Room: ${roomId}`;
+
+    if (!name) { showToast("Enter your name!"); return; }
+    if (!room) { showToast("Enter room code!"); return; }
+
+    currentName = name.slice(0, 20);
+    currentRoom = room;
+    currentState = null;
+
+    const activeLang = languageOptions ? languageOptions.querySelector(".lang-btn.active") : null;
+    const lang = activeLang ? activeLang.dataset.lang : "en";
+
+    socket.emit("joinRoom", { roomId: room, name: currentName, language: lang });
+
+    roomStatus.textContent = `Room: ${room}`;
+    if (subtitleEl) subtitleEl.textContent = `Room: ${room}`;
     shareBtn.classList.remove("hidden");
     enableGameUI(true);
     playSound("click");
-    if (nameInput) nameInput.disabled = true;
-    roomInput.disabled = true;
+
+    if (nameInputHost) nameInputHost.disabled = true;
+    if (nameInputJoin) nameInputJoin.disabled = true;
+    if (roomInput) roomInput.disabled = true;
     if (playerList) playerList.classList.remove("hidden");
 
     const url = new URL(window.location.href);
-    url.searchParams.set("room", roomId);
+    url.searchParams.set("room", room);
     window.history.replaceState({}, "", url.toString());
   }
 
-  joinBtn.addEventListener("click", doJoin);
-  roomInput.addEventListener("keydown", e => { if (e.key === "Enter") doJoin(); });
-  if (nameInput) {
-    nameInput.addEventListener("keydown", e => { if (e.key === "Enter") doJoin(); });
+  if (joinBtn) joinBtn.onclick = () => doJoin();
+  if (createBtn) {
+    createBtn.onclick = () => {
+      const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+      doJoin(null, code);
+    };
   }
+
+  // Handle Enter key for all lobby inputs
+  [nameInputHost, nameInputJoin, roomInput].forEach(el => {
+    if (el) {
+      el.addEventListener("keydown", e => {
+        if (e.key === "Enter") {
+          if (el === nameInputHost) {
+            if (createBtn) createBtn.click();
+          } else {
+            if (joinBtn) joinBtn.click();
+          }
+        }
+      });
+    }
+  });
 
   /* ================= SOCKET EVENTS ================= */
   socket.on("roomState", state => {
@@ -664,7 +745,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!currentRoom && joinBtn) {
       joinBtn.disabled = !!state?.isLocked;
     }
-    updateHostControls();
+    updateHostControls(state);
     updateUIFromState(state, isFirst);
   });
 
@@ -820,11 +901,36 @@ document.addEventListener("DOMContentLoaded", () => {
   if (languageOptions) {
     languageOptions.addEventListener("click", e => {
       const btn = e.target.closest(".lang-btn");
-      if (!btn || btn.disabled || !currentRoom) return;
+      if (!btn || btn.disabled) return;
       const lang = btn.dataset.lang;
       if (!lang) return;
-      socket.emit("changeLanguage", { roomId: currentRoom, language: lang });
+
+      // Update UI immediately (local feedback)
+      languageOptions.querySelectorAll(".lang-btn").forEach(b => b.classList.toggle("active", b === btn));
+      storage.set("icebreaker_lang", lang);
+
+      if (currentRoom) {
+        socket.emit("changeLanguage", { roomId: currentRoom, language: lang });
+      }
       playSound("click");
+    });
+  }
+
+  // Load saved language
+  const savedLang = storage.get("icebreaker_lang");
+  if (savedLang) {
+    const btn = languageOptions ? languageOptions.querySelector(`.lang-btn[data-lang="${savedLang}"]`) : null;
+    if (btn) {
+      languageOptions.querySelectorAll(".lang-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+    }
+  }
+
+  if (leaveBtn) {
+    leaveBtn.addEventListener("click", () => {
+      if (confirm("Are you sure you want to leave the room?")) {
+        window.location.reload(); // Simple way to reset everything for now
+      }
     });
   }
 
