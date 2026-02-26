@@ -769,9 +769,14 @@ function changeLanguage(room, language) {
 
   // Translate the current question to the same index in the new language pool
   // (question arrays are ordered 1-to-1 across languages)
-  if (currentIdx >= 0) {
-    const newPool = (QUESTIONS[language] || QUESTIONS.en)[room.category] || [];
-    room.currentQuestion = newPool[currentIdx] != null ? newPool[currentIdx] : room.currentQuestion;
+  const newPool = (QUESTIONS[language] || QUESTIONS.en)[room.category] || [];
+  if (currentIdx >= 0 && newPool[currentIdx]) {
+    room.currentQuestion = newPool[currentIdx];
+  } else if (newPool.length > 0) {
+    // Fallback: pick a new random question if mapping fails but pool exists
+    room.currentQuestion = getRandomQuestion(room);
+  } else {
+    room.currentQuestion = null;
   }
   // usedIndexes, scores, currentTurn, votedThisRound are intentionally preserved
 
@@ -783,7 +788,7 @@ function nextQuestion(room, nameCount) {
 
   room.votedThisRound = {};
   if (nameCount > 0) {
-    room.currentTurn = (room.currentTurn + 1) % nameCount;
+    room.currentTurn = ((Number(room.currentTurn) || 0) + 1) % nameCount;
   } else {
     room.currentTurn = 0;
   }

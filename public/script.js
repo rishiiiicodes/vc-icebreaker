@@ -4,6 +4,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.body.classList.add("is-ready");
 
+  /* ================= UTILS ================= */
+  const storage = {
+    set: (key, val) => {
+      try { localStorage.setItem(key, val); } catch (e) { /* ignore */ }
+    },
+    get: (key) => {
+      try { return localStorage.getItem(key); } catch (e) { return null; }
+    }
+  };
+
   /* ================= SOCKET.IO ================= */
   const socket = io();
 
@@ -788,15 +798,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
   /* ================= THEME ================= */
   function loadTheme() {
-    const saved = localStorage.getItem("theme");
-    if (saved === "light") {
-      document.body.classList.add("light");
-      return;
-    }
-    if (saved === "dark") return;
-    const prefersLight = window.matchMedia("(prefers-color-scheme: light)").matches;
-    if (prefersLight) {
-      document.body.classList.add("light");
+    const saved = storage.get("vci_theme");
+    if (saved) {
+      applyTheme(saved);
+    } else {
+      const prefersLight = window.matchMedia("(prefers-color-scheme: light)").matches;
+      if (prefersLight) {
+        document.body.classList.add("light");
+      }
     }
   }
 
@@ -844,13 +853,13 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
-  let currentTheme = localStorage.getItem("vci_theme") || "classic";
+  let currentTheme = storage.get("vci_theme") || "classic";
   let themeUniforms = null;
 
   function applyTheme(themeId) {
     if (!THEMES[themeId]) themeId = "classic";
     currentTheme = themeId;
-    localStorage.setItem("vci_theme", themeId);
+    storage.set("vci_theme", themeId);
 
     // Update Body Class
     Object.keys(THEMES).forEach(t => document.body.classList.remove(`theme-${t}`));

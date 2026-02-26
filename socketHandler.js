@@ -107,15 +107,18 @@ module.exports = function socketHandler(io, logger) {
       socket.rooms.forEach(r => { if (r !== socket.id) socket.leave(r); });
 
       const existingRoom = getRoom(roomId);
+      const safeName = typeof name === "string" ? name.trim().slice(0, 20) : "";
 
-      if (existingRoom && getParticipantCount(roomId) >= MAX_PLAYERS_PER_ROOM) {
-        if (!existingRoom.players[socket.id]) { // Allow reconnects but not new players
-          socket.emit("roomLocked", { reason: `Room is full (max ${MAX_PLAYERS_PER_ROOM})` });
-          return;
-        }
+      // Allow reconnections to full/locked rooms if the name matches an existing slot
+      // Allow reconnections to full/locked rooms if the name matches an existing slot that is currently disconnected
+      const isReconnecting = existingRoom && Object.entries(existingRoom.players).some(([id, p]) => p.name === safeName && !io.sockets.sockets.has(id));
+
+      if (existingRoom && !isReconnecting && getParticipantCount(roomId) >= MAX_PLAYERS_PER_ROOM) {
+        socket.emit("roomLocked", { reason: `Room is full (max ${MAX_PLAYERS_PER_ROOM})` });
+        return;
       }
 
-      if (existingRoom && existingRoom.isLocked === true) {
+      if (existingRoom && !isReconnecting && existingRoom.isLocked === true) {
         socket.emit("roomLocked", { reason: "Room is locked by host" });
         return;
       }
@@ -132,22 +135,26 @@ module.exports = function socketHandler(io, logger) {
 
       const room = getRoom(roomId);
       normalizeRoomPlayers(room);
-      const safeName = typeof name === "string" ? name.trim().slice(0, 20) : "";
-      let finalName = safeName;
-      if (!finalName) {
-        const nextIndex = Object.keys(room.players).length + 1;
-        finalName = `Player ${nextIndex}`;
-      }
 
+      // Clean up ghost players (sockets that are gone)
+      const currentSocketIds = Array.from(io.sockets.sockets.keys());
       Object.keys(room.players).forEach(id => {
-        if (!io.sockets.sockets.has(id)) delete room.players[id];
+        if (!currentSocketIds.includes(id)) delete room.players[id];
       });
+
+      let finalName = safeName || `Player ${Object.keys(room.players).length + 1}`;
 
       const names = getPlayerNames(room);
       if (names.includes(finalName)) {
-        let suffix = 2;
-        while (names.includes(`${finalName} ${suffix}`)) suffix += 1;
-        finalName = `${finalName} ${suffix}`;
+        // If it's a reconnect, take over the old slot instead of duplicating
+        const oldEntry = Object.entries(room.players).find(([id, p]) => p.name === finalName && !io.sockets.sockets.has(id));
+        if (oldEntry) {
+          delete room.players[oldEntry[0]];
+        } else {
+          let suffix = 2;
+          while (names.includes(`${finalName} ${suffix}`)) suffix += 1;
+          finalName = `${finalName} ${suffix}`;
+        }
       }
 
       room.players[socket.id] = {
