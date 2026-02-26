@@ -137,6 +137,11 @@ document.addEventListener("DOMContentLoaded", () => {
   let timerInterval = null;
   let timerSecondsLeft = 0;
 
+  // Lightweight mode to keep interactions snappy on all devices
+  const ENABLE_PARALLAX = false;
+  const ENABLE_WEBGL_BG = false;
+  const ENABLE_PARTICLES = false;
+
   function setActiveTimerButton(seconds) {
     if (!timerOptions) return;
     const buttons = timerOptions.querySelectorAll(".timer-btn");
@@ -1184,6 +1189,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   /* ================= PARALLAX ================= */
   (function setupParallax() {
+    if (!ENABLE_PARALLAX) return;
     if (!cardEl) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
@@ -1236,6 +1242,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   /* ================= WEBGL BACKGROUND ================= */
   (function setupWebGL() {
+    if (!ENABLE_WEBGL_BG) return;
     const canvas = document.getElementById("bg");
     if (!canvas) return;
     const gl = canvas.getContext("webgl");
@@ -1307,6 +1314,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   /* ================= PARTICLE LAYER ================= */
   particleLayer = (function setupParticles() {
+    if (!ENABLE_PARTICLES) return null;
     const canvas = document.getElementById("particles");
     if (!canvas) return null;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return null;
