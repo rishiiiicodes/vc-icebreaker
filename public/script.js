@@ -726,6 +726,55 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  /* ================= LOBBY ROUTING ================= */
+  if (goHostBtn) {
+    goHostBtn.onclick = () => {
+      lobbyHome.classList.add("hidden");
+      lobbyHost.classList.remove("hidden");
+      if (themeSelector) themeSelector.classList.remove("hidden");
+      if (languageControls) languageControls.classList.remove("hidden");
+      if (nameInputHost) nameInputHost.focus();
+      playSound("click");
+    };
+  }
+
+  if (goJoinBtn) {
+    goJoinBtn.onclick = () => {
+      lobbyHome.classList.add("hidden");
+      lobbyJoin.classList.remove("hidden");
+      if (themeSelector) themeSelector.classList.remove("hidden");
+      if (languageControls) languageControls.classList.remove("hidden");
+      if (nameInputJoin) nameInputJoin.focus();
+      playSound("click");
+    };
+  }
+
+  if (backToHomeHost) {
+    backToHomeHost.onclick = () => {
+      lobbyHost.classList.add("hidden");
+      lobbyHome.classList.remove("hidden");
+      if (themeSelector) themeSelector.classList.add("hidden");
+      if (languageControls) languageControls.classList.add("hidden");
+      playSound("click");
+    };
+  }
+
+  if (backToHomeJoin) {
+    backToHomeJoin.onclick = () => {
+      lobbyJoin.classList.add("hidden");
+      lobbyHome.classList.remove("hidden");
+      if (themeSelector) themeSelector.classList.add("hidden");
+      if (languageControls) languageControls.classList.add("hidden");
+      playSound("click");
+    };
+  }
+
+  // Initial Visibility Adjustment
+  if (lobbyHome && !lobbyHome.classList.contains("hidden")) {
+    if (themeSelector) themeSelector.classList.add("hidden");
+    if (languageControls) languageControls.classList.add("hidden");
+  }
+
   /* ================= SOCKET EVENTS ================= */
   socket.on("roomState", state => {
     const isFirst = currentState === null;
