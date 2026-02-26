@@ -8,7 +8,8 @@ function createRoom(category = "chill") {
     participants: 0,
     currentTurn: 0,
     players: {},
-    scores: {},
+    scores: {}, // per-round/question scores
+    categoryScores: {}, // { categoryName: { playerName: totalWins } }
     votedThisRound: {},
     timerEnabled: false,
     timerDuration: 60,

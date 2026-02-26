@@ -28,13 +28,16 @@ function startTestServer() {
 }
 
 function waitForState(socket, predicate, label) {
+  let lastSeenState = null;
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => {
       cleanup();
+      console.log(`[TIMEOUT] ${label || "roomState"}. Last seen state:`, JSON.stringify(lastSeenState));
       reject(new Error(label || "Timed out waiting for roomState"));
     }, TIMEOUT_MS);
 
     function handler(state) {
+      lastSeenState = state;
       try {
         if (predicate(state)) {
           cleanup();
@@ -42,6 +45,7 @@ function waitForState(socket, predicate, label) {
         }
       } catch (err) {
         cleanup();
+        console.error("waitForState Error:", err, "State:", JSON.stringify(state));
         reject(err);
       }
     }
@@ -314,7 +318,27 @@ async function run() {
     }
     pass("Scoreboard voting");
 
-    // 11. Reset room
+    // 11. Persistent Category Scoring
+    console.log("Starting test: Persistent Category Scoring");
+    s1.emit("changeCategory", { roomId: ROOM, category: "chill" });
+    await waitForState(s1, s => s.category === "chill", "Switch to chill failed");
+    s2.emit("castVote", { roomId: ROOM, votedFor: "Alice" });
+    await waitForState(s1, s => (s.categoryScores?.chill?.["Alice"] === 1), "Category vote failed");
+
+    s1.emit("changeCategory", { roomId: ROOM, category: "funny" });
+    await waitForState(s1, s => s.category === "funny", "Switch to funny failed");
+    if (lastState.categoryScores?.funny?.["Alice"] === 1) {
+      throw new Error("Score leaked into wrong category");
+    }
+
+    s1.emit("changeCategory", { roomId: ROOM, category: "chill" });
+    await waitForState(s1, s => s.category === "chill", "Switch back to chill failed");
+    if (lastState.categoryScores?.chill?.["Alice"] !== 1) {
+      throw new Error("Category score was not persistent");
+    }
+    pass("Persistent Category Scoring");
+
+    // 12. Reset room
     console.log("Starting test: Reset room");
     s1.emit("resetRoom", ROOM);
     await waitForState(s1, s => (s.usedIndexes || []).length === 0 && s.currentQuestion === null && s.currentTurn === 0, "Reset room failed");

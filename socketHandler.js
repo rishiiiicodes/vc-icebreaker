@@ -312,8 +312,15 @@ module.exports = function socketHandler(io, logger) {
       if (voterName === votedFor) return;
       if (room.votedThisRound[socket.id]) return;
 
+      // Question-specific score (resets on next/reset)
       room.scores[votedFor] = (room.scores[votedFor] || 0) + 1;
       room.votedThisRound[socket.id] = true;
+
+      // Category-persistent score
+      const cat = room.category || "all";
+      if (!room.categoryScores[cat]) room.categoryScores[cat] = {};
+      room.categoryScores[cat][votedFor] = (room.categoryScores[cat][votedFor] || 0) + 1;
+
       updateActivity(room);
       broadcastState(roomId);
     });

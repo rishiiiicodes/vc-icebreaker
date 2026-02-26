@@ -59,6 +59,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const nextBtn = document.getElementById("nextBtn");
   const skipBtn = document.getElementById("skipBtn");
   const resetBtn = document.getElementById("resetBtn");
+  const categoryScoreboard = document.getElementById("categoryScoreboard");
+  const categoryScoreList = document.getElementById("categoryScoreList");
   const toastEl = document.getElementById("toast");
   const cardEl = document.querySelector(".card");
   const subtitleEl = document.querySelector(".subtitle");
@@ -517,6 +519,31 @@ document.addEventListener("DOMContentLoaded", () => {
         leaderboard.classList.remove("hidden");
       } else {
         leaderboard.classList.add("hidden");
+      }
+    }
+
+    if (categoryScoreboard && categoryScoreList) {
+      const scores = state.categoryScores ? state.categoryScores[state.category || "all"] : null;
+      if (scores) {
+        const sorted = Object.entries(scores)
+          .map(([name, val]) => ({ name, val }))
+          .filter(e => e.val > 0)
+          .sort((a, b) => b.val - a.val);
+
+        if (sorted.length > 0) {
+          categoryScoreList.innerHTML = "";
+          sorted.forEach(entry => {
+            const item = document.createElement("div");
+            item.className = "scoreboard-item";
+            item.innerHTML = `${entry.name} <span class="score">${entry.val}</span>`;
+            categoryScoreList.appendChild(item);
+          });
+          categoryScoreboard.classList.remove("hidden");
+        } else {
+          categoryScoreboard.classList.add("hidden");
+        }
+      } else {
+        categoryScoreboard.classList.add("hidden");
       }
     }
 
