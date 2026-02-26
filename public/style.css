@@ -816,15 +816,20 @@ body.light .btn.ghost {
 
 .question-card {
   width: 100%;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(var(--cat-color-rgb, 255, 255, 255), 0.05);
+  border: 1px solid rgba(var(--cat-color-rgb, 255, 255, 255), 0.15);
   border-radius: 20px;
-  transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  transition: all 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2), 0 0 30px rgba(var(--cat-color-rgb, 255, 255, 255), 0.05);
   position: relative;
   overflow: hidden;
   display: flex;
   flex-direction: column;
+}
+
+body.light .question-card {
+  background: rgba(var(--cat-color-rgb, 0, 0, 0), 0.05);
+  border-color: rgba(var(--cat-color-rgb, 0, 0, 0), 0.15);
 }
 
 .card-body {

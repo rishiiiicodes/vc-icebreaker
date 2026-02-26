@@ -87,6 +87,26 @@ document.addEventListener("DOMContentLoaded", () => {
     age: "#fbbf24"
   };
 
+  const categoryRgbPalette = {
+    chill: "24, 213, 196",
+    funny: "246, 178, 91",
+    spicy: "244, 83, 72",
+    deep: "124, 231, 255",
+    chaos: "255, 115, 180",
+    work: "74, 222, 128",
+    nostalgia: "251, 146, 60",
+    creative: "232, 121, 249",
+    all: "255, 255, 255",
+    movies: "167, 139, 250",
+    sports: "52, 211, 153",
+    travel: "56, 189, 248",
+    food: "249, 115, 22",
+    music: "244, 114, 182",
+    gaming: "129, 140, 248",
+    romance: "255, 77, 109",
+    age: "251, 191, 36"
+  };
+
   let particleLayer = null;
   let doneAlreadyPlayed = false;
   let lastQuestion = null;
@@ -346,6 +366,11 @@ document.addEventListener("DOMContentLoaded", () => {
     document.body.classList.remove(...Object.keys(particlePalette));
     document.body.classList.add(category);
     setParticleColor(category);
+
+    const rgb = categoryRgbPalette[category] || "255, 255, 255";
+    if (questionCard) {
+      questionCard.style.setProperty("--cat-color-rgb", rgb);
+    }
   }
 
   function updateProgress(used, total) {
