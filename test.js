@@ -358,7 +358,29 @@ async function run() {
       fail(`Disconnect update failed (players: ${JSON.stringify(lastPlayers)})`);
     }
 
-    // 13. All categories valid
+    // 13. Host Ownership Transfer
+    console.log("Starting test: Host Ownership Transfer");
+    const s2_new = await connectSocket();
+    sockets.push(s2_new);
+    await sleep(500);
+    s2_new.emit("joinRoom", { roomId: ROOM, name: "Charlie" });
+    await waitForState(s1, s => !!(s.playersV2 && s.playersV2[s2_new.id]), "Charlie join failed");
+
+    // s1 is host. Transfer to Charlie (s2_new)
+    s1.emit("transferHost", { roomId: ROOM, targetId: s2_new.id });
+    await waitForState(s2_new, s => s.playersV2[s2_new.id]?.isHost === true, "Transfer failed");
+
+    // Verify Charlie can now change category
+    s2_new.emit("changeCategory", { roomId: ROOM, category: "spicy" });
+    await waitForState(s2_new, s => s.category === "spicy", "New host category change failed");
+
+    // Transfer back to s1 for remaining tests
+    s2_new.emit("transferHost", { roomId: ROOM, targetId: s1.id });
+    await waitForState(s1, s => s.playersV2[s1.id]?.isHost === true, "Transfer back failed");
+
+    pass("Host Ownership Transfer");
+
+    // 14. All categories valid
     console.log("Starting test: All categories valid");
     const categories = ["chill", "funny", "spicy", "deep", "chaos", "work", "nostalgia", "creative"];
     for (const cat of categories) {

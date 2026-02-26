@@ -300,6 +300,21 @@ module.exports = function socketHandler(io, logger) {
       broadcastState(roomId);
     });
 
+    socket.on("transferHost", ({ roomId, targetId }) => {
+      const room = getRoom(roomId);
+      if (!room) return;
+      if (!isHost(socket, room)) return;
+
+      const target = room.players[targetId];
+      if (!target) return;
+
+      assignHost(room, targetId);
+      updateActivity(room);
+      broadcastState(roomId);
+
+      if (logger) logger.info({ room: roomId, from: socket.id, to: targetId }, "HOST_TRANSFERRED");
+    });
+
     socket.on("castVote", ({ roomId, votedFor }) => {
       const room = getRoom(roomId);
       if (!room) return;

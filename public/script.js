@@ -426,9 +426,35 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (playerList) {
-      const names = Object.values(state.players || {});
-      if (names.length > 0) {
-        playerList.textContent = `In this room: ${names.join(", ")}`;
+      const players = Object.values(state.playersV2 || {});
+      if (players.length > 0) {
+        playerList.innerHTML = "";
+        players.forEach(p => {
+          const chip = document.createElement("div");
+          chip.className = `player-chip ${p.isHost ? "is-host" : ""}`;
+
+          let html = `<span>${p.name}</span>`;
+          if (p.isHost) {
+            html = `<span class="host-crown" title="Room Host">\u{1F451}</span> ` + html;
+          } else if (isHost) {
+            // Only show transfer button to the current host
+            html += ` <button class="transfer-btn" data-id="${p.id}" title="Transfer Host Ownership">Handover</button>`;
+          }
+
+          chip.innerHTML = html;
+
+          // Attach listener if it's a transfer button
+          const tBtn = chip.querySelector(".transfer-btn");
+          if (tBtn) {
+            tBtn.addEventListener("click", () => {
+              if (confirm(`Transfer room ownership to ${p.name}?`)) {
+                socket.emit("transferHost", { roomId: currentRoom, targetId: p.id });
+              }
+            });
+          }
+
+          playerList.appendChild(chip);
+        });
         playerList.classList.remove("hidden");
       } else {
         playerList.classList.add("hidden");
