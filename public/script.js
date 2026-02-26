@@ -52,6 +52,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const timerCount = document.getElementById("timerCount");
   const timerCustomInput = document.getElementById("timerCustomInput");
   const languageOptions = document.getElementById("languageOptions");
+  const themeSelector = document.getElementById("themeSelector");
+  const languageControls = document.getElementById("languageControls");
   const doneOverlay = document.getElementById("doneOverlay");
   const progressFill = document.getElementById("progressFill");
   const progressBar = document.querySelector(".progress");
@@ -1145,7 +1147,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  const themeSelector = document.getElementById("themeSelector");
   if (themeSelector) {
     themeSelector.addEventListener("click", e => {
       const dot = e.target.closest(".theme-dot");
