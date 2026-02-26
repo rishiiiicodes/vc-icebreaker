@@ -212,8 +212,29 @@
               <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
             </svg>
           </button>
-          <p id="question" class="question" aria-live="polite" aria-atomic="true">Join a room to begin.</p>
+          <div class="card-body">
+            <p id="question" class="question" aria-live="polite" aria-atomic="true">Join a room to begin.</p>
+          </div>
+
+          <div class="card-footer">
+            <div class="reaction-bar hidden" id="reactionBar">
+              <button class="reaction-btn" data-emoji="&#x1F525;">&#x1F525;</button>
+              <button class="reaction-btn" data-emoji="&#x1F602;">&#x1F602;</button>
+              <button class="reaction-btn" data-emoji="&#x2764;&#xFE0F;">&#x2764;&#xFE0F;</button>
+              <button class="reaction-btn" data-emoji="&#x1F62E;">&#x1F62E;</button>
+            </div>
+            <div id="votingPanel" class="voting-panel hidden">
+              <p class="voting-label">&#x1F451; Who answered best?</p>
+              <div id="voteList" class="vote-list"></div>
+            </div>
+            <!-- Category Scoreboard -->
+            <div id="categoryScoreboard" class="category-scoreboard hidden">
+              <p class="scoreboard-title">Category Leaderboard</p>
+              <div id="categoryScoreList" class="scoreboard-list"></div>
+            </div>
+          </div>
         </div>
+
         <div id="doneOverlay" class="done-overlay hidden" aria-live="polite">
           <span class="done-icon" aria-hidden="true">&#x1F389;</span>
           <p>All questions used!</p>
@@ -222,22 +243,6 @@
             <p class="leaderboard-title">&#x1F3C6; Leaderboard</p>
             <ol id="leaderboardList" class="leaderboard-list"></ol>
           </div>
-        </div>
-        <div class="reaction-bar hidden" id="reactionBar">
-          <button class="reaction-btn" data-emoji="&#x1F525;">&#x1F525;</button>
-          <button class="reaction-btn" data-emoji="&#x1F602;">&#x1F602;</button>
-          <button class="reaction-btn" data-emoji="&#x2764;&#xFE0F;">&#x2764;&#xFE0F;</button>
-          <button class="reaction-btn" data-emoji="&#x1F62E;">&#x1F62E;</button>
-        </div>
-        <div id="votingPanel" class="voting-panel hidden">
-          <p class="voting-label">&#x1F451; Who answered best?</p>
-          <div id="voteList" class="vote-list"></div>
-        </div>
-
-        <!-- Category Scoreboard -->
-        <div id="categoryScoreboard" class="category-scoreboard hidden">
-          <p class="scoreboard-title">Category Leaderboard</p>
-          <div id="categoryScoreList" class="scoreboard-list"></div>
         </div>
       </div>
       </div>
