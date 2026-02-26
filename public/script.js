@@ -54,6 +54,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const languageOptions = document.getElementById("languageOptions");
   const themeSelector = document.getElementById("themeSelector");
   const languageControls = document.getElementById("languageControls");
+  const playersToggle = document.getElementById("playersToggle");
   const doneOverlay = document.getElementById("doneOverlay");
   const progressFill = document.getElementById("progressFill");
   const progressBar = document.querySelector(".progress");
@@ -141,6 +142,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const ENABLE_PARALLAX = false;
   const ENABLE_WEBGL_BG = false;
   const ENABLE_PARTICLES = false;
+  let playersPanelVisible = false;
 
   function setActiveTimerButton(seconds) {
     if (!timerOptions) return;
@@ -351,7 +353,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const upper = urlRoom.toUpperCase();
     roomInput.value = upper;
     roomStatus.textContent = "You've been invited \u2014 enter your name to join";
-    if (nameInput) nameInput.focus();
+    // Jump straight into Join flow when opened via link
+    showLobbySubScreen("lobbyJoin");
+    if (themeSelector) themeSelector.classList.remove("hidden");
+    if (languageControls) languageControls.classList.remove("hidden");
+    if (nameInputJoin) nameInputJoin.focus();
   }
 
   /* ================= UI HELPERS ================= */
@@ -393,6 +399,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (lobby) lobby.classList.toggle("hidden", on);
     if (game) game.classList.toggle("hidden", !on);
     if (leaveBtn) leaveBtn.classList.toggle("hidden", !on);
+    if (playersToggle) playersToggle.classList.toggle("hidden", !on);
 
     // Reset lobby sub-screens when going back to lobby
     if (!on) showLobbySubScreen("lobbyHome");
@@ -718,6 +725,7 @@ document.addEventListener("DOMContentLoaded", () => {
     createBtn.onclick = () => {
       const code = Math.random().toString(36).substring(2, 8).toUpperCase();
       doJoin(null, code);
+      playersPanelVisible = true;
     };
   }
 
@@ -990,6 +998,13 @@ document.addEventListener("DOMContentLoaded", () => {
       if (confirm("Are you sure you want to leave the room?")) {
         window.location.reload(); // Simple way to reset everything for now
       }
+    });
+  }
+
+  if (playersToggle && playerList) {
+    playersToggle.addEventListener("click", () => {
+      playersPanelVisible = !playersPanelVisible;
+      playerList.classList.toggle("hidden", !playersPanelVisible);
     });
   }
 
