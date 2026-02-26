@@ -300,14 +300,18 @@ document.addEventListener("DOMContentLoaded", () => {
     return `${adj}${noun}${num}`;
   }
 
-  generateBtn.addEventListener("click", () => {
-    roomInput.value = generateRoomCode();
-    if (nameInput) {
-      nameInput.focus();
-      if (!nameInput.value.trim()) showToast("Enter your name, then Join.");
-    }
-    playSound("click");
-  });
+  // Older UI had a standalone "Generate" button; the current markup may not.
+  // Guard this listener so missing elements don't break the rest of the script.
+  if (generateBtn && roomInput) {
+    generateBtn.addEventListener("click", () => {
+      roomInput.value = generateRoomCode();
+      if (nameInput) {
+        nameInput.focus();
+        if (!nameInput.value.trim()) showToast("Enter your name, then Join.");
+      }
+      playSound("click");
+    });
+  }
 
   /* ================= SHARE ================= */
   function buildShareUrl(roomId) {
