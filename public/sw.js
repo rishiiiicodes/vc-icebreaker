@@ -1,4 +1,4 @@
-﻿const CACHE_NAME = "vc-icebreaker-v2";
+const CACHE_NAME = "vc-icebreaker-v2";
 const ASSETS = ["/", "/style.css", "/script.js", "/manifest.json"];
 
 self.addEventListener("install", (e) => {
@@ -22,16 +22,31 @@ self.addEventListener("activate", (e) => {
     );
 });
 
-// Stale-while-revalidate strategy
+// Stale-while-revalidate strategy with safer cloning
 self.addEventListener("fetch", (e) => {
+    const req = e.request;
+
+    // Only handle GET HTTP(S) requests; let others pass through untouched
+    if (req.method !== "GET" || !(req.url.startsWith("http://") || req.url.startsWith("https://"))) {
+        return;
+    }
+
     e.respondWith(
-        caches.match(e.request).then((cachedResponse) => {
-            const fetchPromise = fetch(e.request).then((networkResponse) => {
-                caches.open(CACHE_NAME).then((cache) => {
-                    cache.put(e.request, networkResponse.clone());
-                });
-                return networkResponse;
-            });
+        caches.match(req).then((cachedResponse) => {
+            const fetchPromise = fetch(req)
+                .then((networkResponse) => {
+                    // Some responses (e.g. opaque, error) can't be cloned/put safely
+                    if (!networkResponse || !networkResponse.ok || networkResponse.type === "opaque") {
+                        return networkResponse;
+                    }
+                    const responseClone = networkResponse.clone();
+                    caches.open(CACHE_NAME)
+                        .then((cache) => cache.put(req, responseClone))
+                        .catch(() => { /* ignore cache errors */ });
+                    return networkResponse;
+                })
+                .catch(() => cachedResponse || Response.error());
+
             return cachedResponse || fetchPromise;
         })
     );
