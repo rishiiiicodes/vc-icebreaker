@@ -280,7 +280,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const nameInput = document.getElementById("nameInput");
   const joinBtn = document.getElementById("joinBtn");
   const generateBtn = document.getElementById("generateBtn");
-  const shareBtn = document.getElementById("shareBtn");
   const inlineShareBtn = document.getElementById("inlineShareBtn");
   const roomStatus = document.getElementById("roomStatus");
   const participantBadge = document.getElementById("participantBadge");
@@ -601,23 +600,7 @@ document.addEventListener("DOMContentLoaded", () => {
     return url.toString();
   }
 
-  shareBtn.addEventListener("click", async () => {
-    if (!currentRoom) return;
-    const url = buildShareUrl(currentRoom);
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: "VC Icebreaker", text: `Join room ${currentRoom}`, url });
-        return;
-      } catch (_) { }
-    }
-    try {
-      await navigator.clipboard.writeText(url);
-      showToast("Link copied!");
-      playSound("click");
-    } catch (_) {
-      showToast("Link: " + url);
-    }
-  });
+  // Old shareBtn functionality removed - now using inlineShareBtn only
 
   // Pre-fill room code from URL
   const urlRoom = new URLSearchParams(window.location.search).get("room");
@@ -1219,7 +1202,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     roomStatus.textContent = `Room: ${room}`;
     if (subtitleEl) subtitleEl.textContent = `Room: ${room}`;
-    shareBtn.classList.remove("hidden");
     enableGameUI(true);
     playSound("click");
 
