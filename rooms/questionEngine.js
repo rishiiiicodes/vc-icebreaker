@@ -1233,27 +1233,20 @@ function nextQuestion(room, nameCount) {
 }
 
 function skipQuestion(room) {
-  const lang = room?.language || "en";
   if (!room?.category) return null;
 
   room.votedThisRound = {};
 
+  // Remove the current question's index so it re-enters the pool
   if (room.currentQuestion) {
     const idx = getQuestionIndex(room, room.currentQuestion);
     if (idx >= 0) room.usedIndexes = room.usedIndexes.filter(i => i !== idx);
   }
 
-  const list = (QUESTIONS[lang] || QUESTIONS.en)[room.category] || [];
-  const usedSet = new Set(room.usedIndexes);
-  const available = list.map((_, i) => i).filter(i => !usedSet.has(i));
-  if (!available.length) return null;
-
-  const index = available[Math.floor(Math.random() * available.length)];
-  room.usedIndexes.push(index);
-  room.usedIndexes = [...new Set(room.usedIndexes)];
-  room.currentQuestion = list[index];
-
-  return room.currentQuestion;
+  // Delegate to getRandomQuestion — handles picking, recording, and deduplication
+  const question = getRandomQuestion(room);
+  room.currentQuestion = question;
+  return question;
 }
 
 function resetRoom(room) {

@@ -91,6 +91,9 @@ module.exports = function socketHandler(io, logger) {
   }
 
   io.on("connection", (socket) => {
+    // Store IP once at connection time — used for rate limiting sensitive events.
+    // Falls back to socket.id if IP is unavailable (e.g. local dev behind proxy).
+    const clientIp = socket.handshake.address || socket.id;
 
     socket.on("joinRoom", (data) => {
       const { roomId: rawRoomId, name } = typeof data === "string"
@@ -101,7 +104,6 @@ module.exports = function socketHandler(io, logger) {
       if (!roomId || roomId.length < 2) return;
 
       // IP-based rate limit for room creation/joining to prevent spammer creating 1000s of rooms
-      const clientIp = socket.handshake.address || socket.id;
       if (isRateLimited(clientIp, "joinRoom", 200)) return; // Max 5 joins per second per IP
 
       // Leave previous rooms
@@ -239,7 +241,7 @@ module.exports = function socketHandler(io, logger) {
     });
 
     socket.on("nextQuestion", ({ roomId }) => {
-      if (isRateLimited(socket.id, "nextQuestion", 500)) return;
+      if (isRateLimited(clientIp, "nextQuestion", 500)) return;
       const room = getRoom(roomId);
       if (!room) return;
       normalizeRoomPlayers(room);
@@ -254,7 +256,7 @@ module.exports = function socketHandler(io, logger) {
     });
 
     socket.on("skipQuestion", ({ roomId }) => {
-      if (isRateLimited(socket.id, "skipQuestion", 200)) return;
+      if (isRateLimited(clientIp, "skipQuestion", 200)) return;
       const room = getRoom(roomId);
       if (!room) return;
 
@@ -262,10 +264,12 @@ module.exports = function socketHandler(io, logger) {
       if (!isHost(socket, room) && !isTurn(socket.id, room)) return;
 
       const question = skipQuestion(room);
-      if (!question) return;
       updateActivity(room);
-      if (logger) logger.info({ room: roomId, q: truncate(room.currentQuestion) }, "QUESTION_SKIPPED_SERVED");
-
+      if (question) {
+        if (logger) logger.info({ room: roomId, q: truncate(room.currentQuestion) }, "QUESTION_SKIPPED_SERVED");
+      } else {
+        if (logger) logger.info({ room: roomId }, "QUESTION_SKIPPED_POOL_EXHAUSTED");
+      }
       broadcastState(roomId);
     });
 
@@ -287,7 +291,7 @@ module.exports = function socketHandler(io, logger) {
     });
 
     socket.on("resetRoom", (roomId) => {
-      if (isRateLimited(socket.id, "resetRoom", 1000)) return;
+      if (isRateLimited(clientIp, "resetRoom", 1000)) return;
       const room = getRoom(roomId);
       if (!room) return;
       normalizeRoomPlayers(room);
@@ -373,9 +377,9 @@ module.exports = function socketHandler(io, logger) {
           }
         }
       });
-      // Clean up rate limit entries
+      // Clean up rate limit entries for both socket ID and IP keys
       Object.keys(rateLimits).forEach(k => {
-        if (k.startsWith(socket.id)) delete rateLimits[k];
+        if (k.startsWith(socket.id) || k.startsWith(clientIp)) delete rateLimits[k];
       });
     });
 

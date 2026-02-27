@@ -69,6 +69,13 @@ server.listen(PORT, "0.0.0.0", () => {
 // Graceful shutdown
 function shutdown() {
   logger.info("SIGTERM/SIGINT received. Shutting down gracefully...");
+
+  // Stop accepting new HTTP connections and drain any in-flight requests.
+  // closeAllConnections() is available in Node 18.2+; skip gracefully on older versions.
+  if (typeof server.closeAllConnections === "function") {
+    server.closeAllConnections();
+  }
+
   io.close(() => {
     logger.info("Socket.io and HTTP server closed.");
     process.exit(0);
