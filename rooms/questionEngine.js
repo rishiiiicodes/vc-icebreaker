@@ -1157,7 +1157,8 @@ function getRandomQuestion(room, record = true) {
 
   room.usedIndexes = room.usedIndexes || [];
   const list = (QUESTIONS[lang] || QUESTIONS.en)[room.category] || [];
-  const available = list.map((_, i) => i).filter(i => !room.usedIndexes.includes(i));
+  const usedSet = new Set(room.usedIndexes);
+  const available = list.map((_, i) => i).filter(i => !usedSet.has(i));
 
   if (!available.length) return null;
 
@@ -1243,7 +1244,8 @@ function skipQuestion(room) {
   }
 
   const list = (QUESTIONS[lang] || QUESTIONS.en)[room.category] || [];
-  const available = list.map((_, i) => i).filter(i => !room.usedIndexes.includes(i));
+  const usedSet = new Set(room.usedIndexes);
+  const available = list.map((_, i) => i).filter(i => !usedSet.has(i));
   if (!available.length) return null;
 
   const index = available[Math.floor(Math.random() * available.length)];

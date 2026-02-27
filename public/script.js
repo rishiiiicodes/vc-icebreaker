@@ -421,11 +421,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if (el) el.classList.remove("hidden");
   }
 
-  if (goHostBtn) goHostBtn.onclick = () => showLobbySubScreen("lobbyHost");
-  if (goJoinBtn) goJoinBtn.onclick = () => showLobbySubScreen("lobbyJoin");
-  if (backToHomeHost) backToHomeHost.onclick = () => showLobbySubScreen("lobbyHome");
-  if (backToHomeJoin) backToHomeJoin.onclick = () => showLobbySubScreen("lobbyHome");
-
   function setActivePill(category) {
     getPills().forEach(p => {
       const active = p.dataset.value === category;
@@ -837,7 +832,6 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   socket.on("reaction", ({ emoji, name }) => {
-    console.log("reaction event received on client:", emoji, name);
     if (!emoji) return;
     spawnFloatingEmoji(emoji, name);
     spawnConfetti(30);
@@ -931,7 +925,6 @@ document.addEventListener("DOMContentLoaded", () => {
       const btn = e.target.closest(".reaction-btn");
       if (!btn || btn.disabled || !currentRoom) return;
       const emoji = btn.dataset.emoji || "";
-      console.log("emoji clicked:", JSON.stringify(emoji));
       if (!emoji || !currentState || !currentState.currentQuestion) return;
       socket.emit("sendReaction", { roomId: currentRoom, emoji });
       btn.classList.add("active");
@@ -1039,7 +1032,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function spawnFloatingEmoji(emoji, name) {
     if (!reactionStage) return;
-    console.log("spawning emoji:", emoji, "stage:", reactionStage);
     const el = document.createElement("div");
     el.className = "floating-emoji";
     el.textContent = emoji;
