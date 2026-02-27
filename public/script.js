@@ -137,6 +137,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let lastTimerDuration = 60;
   let timerInterval = null;
   let timerSecondsLeft = 0;
+  let isMyTurn = false;
 
   // Lightweight mode to keep interactions snappy on all devices
   const ENABLE_PARALLAX = false;
@@ -186,7 +187,7 @@ document.addEventListener("DOMContentLoaded", () => {
         updateTimerRing(seconds, 0);
         stopTimer();
         playSound("click");
-        if (currentRoom) {
+        if (currentRoom && (isHost || isMyTurn)) {
           socket.emit("nextQuestion", { roomId: currentRoom });
         }
         return;
@@ -379,7 +380,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (timerCustomInput) timerCustomInput.disabled = !canHost;
 
     // Progression: Host OR whose turn it is
-    let isMyTurn = false;
+    isMyTurn = false;
     if (state && state.players) {
       const names = Object.values(state.players);
       if (names.length > 0) {
@@ -509,24 +510,32 @@ document.addEventListener("DOMContentLoaded", () => {
           const chip = document.createElement("div");
           chip.className = `player-chip ${p.isHost ? "is-host" : ""}`;
 
-          let html = `<span>${p.name}</span>`;
           if (p.isHost) {
-            html = `<span class="host-crown" title="Room Host">\u{1F451}</span> ` + html;
-          } else if (isHost) {
-            // Only show transfer button to the current host
-            html += ` <button class="transfer-btn" data-id="${p.id}" title="Transfer Host Ownership">Handover</button>`;
+            const crown = document.createElement("span");
+            crown.className = "host-crown";
+            crown.title = "Room Host";
+            crown.textContent = "\u{1F451}";
+            chip.appendChild(crown);
+            chip.appendChild(document.createTextNode(" "));
           }
 
-          chip.innerHTML = html;
+          const nameSpan = document.createElement("span");
+          nameSpan.textContent = p.name;
+          chip.appendChild(nameSpan);
 
-          // Attach listener if it's a transfer button
-          const tBtn = chip.querySelector(".transfer-btn");
-          if (tBtn) {
+          if (!p.isHost && isHost) {
+            // Only show transfer button to the current host
+            const tBtn = document.createElement("button");
+            tBtn.className = "transfer-btn";
+            tBtn.title = "Transfer Host Ownership";
+            tBtn.textContent = "Handover";
             tBtn.addEventListener("click", () => {
               if (confirm(`Transfer room ownership to ${p.name}?`)) {
                 socket.emit("transferHost", { roomId: currentRoom, targetId: p.id });
               }
             });
+            chip.appendChild(document.createTextNode(" "));
+            chip.appendChild(tBtn);
           }
 
           playerList.appendChild(chip);
@@ -662,7 +671,11 @@ document.addEventListener("DOMContentLoaded", () => {
           sorted.forEach(entry => {
             const item = document.createElement("div");
             item.className = "scoreboard-item";
-            item.innerHTML = `${entry.name} <span class="score">${entry.val}</span>`;
+            item.appendChild(document.createTextNode(entry.name + " "));
+            const scoreSpan = document.createElement("span");
+            scoreSpan.className = "score";
+            scoreSpan.textContent = entry.val;
+            item.appendChild(scoreSpan);
             categoryScoreList.appendChild(item);
           });
           categoryScoreboard.classList.remove("hidden");
@@ -801,7 +814,7 @@ document.addEventListener("DOMContentLoaded", () => {
       currentHostId = host ? host.id : null;
       isHost = socket.id === currentHostId;
     } else {
-      isHost = true;
+      isHost = false;
     }
     if (currentRoom && roomStatus && typeof state.isLocked === "boolean") {
       const base = `Room: ${currentRoom}`;
@@ -830,8 +843,8 @@ document.addEventListener("DOMContentLoaded", () => {
     spawnConfetti(30);
   });
 
-  socket.on("roomLocked", () => {
-    showToast("Room is locked by host");
+  socket.on("roomLocked", ({ reason } = {}) => {
+    showToast(reason || "Room is locked");
   });
 
   socket.on("connect_error", () => showToast("Connection lost. Reconnecting..."));

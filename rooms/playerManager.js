@@ -1,6 +1,5 @@
 function normalizeRoomPlayers(room) {
-  if (!room || !room.players || room._playersMigrated) return;
-  room._playersMigrated = true;
+  if (!room || !room.players) return;
   Object.entries(room.players).forEach(([id, p]) => {
     if (typeof p === "string") {
       room.players[id] = {
