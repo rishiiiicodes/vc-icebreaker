@@ -4,6 +4,257 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.body.classList.add("is-ready");
 
+  /* ================= RANKING SYSTEM ================= */
+  let previousScores = {};
+
+  function animateVoteReceived(playerName) {
+    const playerChips = document.querySelectorAll('.player-chip');
+    playerChips.forEach(chip => {
+      const nameSpan = chip.querySelector('.player-name');
+      if (nameSpan && nameSpan.textContent === playerName) {
+        // Remove existing animations
+        const existingAnim = chip.querySelector('.vote-animation');
+        if (existingAnim) existingAnim.remove();
+        
+        // Create new vote animation
+        const animation = document.createElement('div');
+        animation.className = 'vote-animation';
+        animation.textContent = '+1 ⭐';
+        chip.style.position = 'relative';
+        chip.appendChild(animation);
+        
+        // Remove animation after completion
+        setTimeout(() => animation.remove(), 1500);
+      }
+    });
+  }
+
+  function createPodiumUI(state) {
+    const categoryScores = state.categoryScores || {};
+    const currentScores = state.scores || {};
+    const playersV2 = state.playersV2 || {};
+    
+    // Calculate total scores for ALL players from categoryScores
+    const totalScores = {};
+    Object.values(categoryScores).forEach(categoryScore => {
+      Object.entries(categoryScore).forEach(([name, score]) => {
+        totalScores[name] = (totalScores[name] || 0) + score;
+      });
+    });
+    
+    // Include ALL players from playersV2, even those with 0 scores
+    const allPlayers = Object.values(playersV2).map(player => ({
+      name: player.name,
+      totalScore: totalScores[player.name] || 0,
+      currentScore: currentScores[player.name] || 0,
+      isHost: player.isHost || false
+    }));
+    
+    // Sort by total score descending, keep original order for ties
+    allPlayers.sort((a, b) => {
+      if (b.totalScore !== a.totalScore) {
+        return b.totalScore - a.totalScore;
+      }
+      // Keep original order for ties by comparing their position in playersV2
+      const aIndex = Object.values(playersV2).findIndex(p => p.name === a.name);
+      const bIndex = Object.values(playersV2).findIndex(p => p.name === b.name);
+      return aIndex - bIndex;
+    });
+
+    if (allPlayers.length === 0) return '';
+
+    let leaderboardHTML = `
+      <div class="leaderboard-header">
+        Final Standings — ${allPlayers.length} players
+      </div>
+      <div class="leaderboard-table">
+    `;
+    
+    allPlayers.forEach((player, index) => {
+      const rank = index + 1;
+      const scoreDisplay = player.totalScore > 0 ? `${player.totalScore} ` : '—';
+      const rankIcon = rank === 1 ? '' : rank === 2 ? '' : rank === 3 ? '' : `${rank}.`;
+      const rankClass = rank === 1 ? 'first' : rank === 2 ? 'second' : rank === 3 ? 'third' : 'other';
+      const avatarLetter = player.name.charAt(0).toUpperCase();
+      const hostIcon = player.isHost ? ' <span class="host-icon"></span>' : '';
+      
+      leaderboardHTML += `
+        <div class="leaderboard-row ${rankClass}" style="animation-delay: ${index * 0.1}s">
+          <div class="leaderboard-rank">${rankIcon}</div>
+          <div class="leaderboard-avatar" style="background-color: ${getAvatarColor(rank)}">
+            ${avatarLetter}
+          </div>
+          <div class="leaderboard-name">
+            ${player.name}${hostIcon}
+          </div>
+          <div class="leaderboard-score">${scoreDisplay}</div>
+        </div>
+      `;
+    });
+    
+    leaderboardHTML += `
+      </div>
+      <div class="leaderboard-actions">
+        ${isHost ? '<button class="btn primary" id="playAgainBtn"> Play Again</button>' : ''}
+      </div>
+    `;
+
+    return leaderboardHTML;
+  }
+
+  function getAvatarColor(rank) {
+    const colors = {
+      1: '#FFD700', // Gold
+      2: '#C0C0C0', // Silver  
+      3: '#CD7F32', // Bronze
+      default: '#64748b' // Default gray
+    };
+    return colors[rank] || colors.default;
+  }
+
+  function updateMiniLeaderboard(state) {
+    const categoryScores = state.categoryScores || {};
+    const playersV2 = state.playersV2 || {};
+    
+    // Calculate total scores for all players
+    const totalScores = {};
+    Object.values(categoryScores).forEach(categoryScore => {
+      Object.entries(categoryScore).forEach(([name, score]) => {
+        totalScores[name] = (totalScores[name] || 0) + score;
+      });
+    });
+    
+    // Get all players with scores
+    const allPlayers = Object.values(playersV2).map(player => ({
+      name: player.name,
+      totalScore: totalScores[player.name] || 0
+    }));
+    
+    // Sort by score and get top 3
+    const topPlayers = allPlayers
+      .sort((a, b) => b.totalScore - a.totalScore)
+      .slice(0, 3)
+      .filter(p => p.totalScore > 0); // Only show players with votes
+    
+    // Find or create mini leaderboard element
+    let miniLeaderboard = document.getElementById('miniLeaderboard');
+    if (!miniLeaderboard) {
+      miniLeaderboard = document.createElement('div');
+      miniLeaderboard.id = 'miniLeaderboard';
+      miniLeaderboard.className = 'mini-leaderboard hidden';
+      
+      // Insert after question area
+      const questionArea = document.getElementById('questionArea');
+      if (questionArea) {
+        questionArea.parentNode.insertBefore(miniLeaderboard, questionArea.nextSibling);
+      }
+    }
+    
+    if (topPlayers.length > 0) {
+      const medals = ['', '', ''];
+      miniLeaderboard.innerHTML = topPlayers.map((player, index) => 
+        `${medals[index]} ${player.name} (${player.totalScore})`
+      ).join('   ');
+      miniLeaderboard.classList.remove('hidden');
+    } else {
+      miniLeaderboard.classList.add('hidden');
+    }
+  }
+
+  function updateLiveScoreTicker(state) {
+    if (!voteList) return;
+    
+    // Don't overwrite if voting is active (buttons are present)
+    const existingVoteBtns = voteList.querySelectorAll('.vote-btn');
+    if (existingVoteBtns.length > 0) return;
+    
+    const scores = state.scores || {};
+    const players = Object.values(state.players || {});
+    
+    voteList.innerHTML = '';
+    
+    players.forEach(player => {
+      const voteCount = scores[player.name] || 0;
+      const voteItem = document.createElement('div');
+      voteItem.className = 'vote-item';
+      
+      const nameLabel = document.createElement('span');
+      nameLabel.textContent = player.name;
+      
+      const scoreBadge = document.createElement('span');
+      scoreBadge.className = `vote-score-badge ${voteCount > 0 ? 'has-votes' : ''}`;
+      scoreBadge.textContent = ` ${voteCount}`;
+      
+      voteItem.appendChild(nameLabel);
+      voteItem.appendChild(scoreBadge);
+      voteList.appendChild(voteItem);
+    });
+  }
+
+  function updateRankBadges(state) {
+    const categoryScores = state.categoryScores || {};
+    const totalScores = {};
+    
+    // Calculate total scores
+    Object.values(categoryScores).forEach(categoryScore => {
+      Object.entries(categoryScore).forEach(([name, score]) => {
+        totalScores[name] = (totalScores[name] || 0) + score;
+      });
+    });
+
+    // Update existing rank badges
+    const playerChips = document.querySelectorAll('.player-chip');
+    playerChips.forEach(chip => {
+      const nameSpan = chip.querySelector('.player-name');
+      if (!nameSpan) return;
+      
+      const playerName = nameSpan.textContent;
+      const playerScore = totalScores[playerName] || 0;
+      
+      // Remove existing rank badges
+      const existingBadges = chip.querySelectorAll('.rank-badge');
+      existingBadges.forEach(badge => badge.remove());
+      
+      // Add rank badge if player has score and is in top 3
+      if (playerScore > 0) {
+        const sortedPlayers = Object.entries(totalScores)
+          .sort(([, a], [, b]) => b - a)
+          .map(([name]) => name);
+        
+        const rankIndex = sortedPlayers.indexOf(playerName);
+        if (rankIndex < 3) {
+          const rankBadge = document.createElement('span');
+          rankBadge.className = 'rank-badge';
+          if (rankIndex === 0) {
+            rankBadge.textContent = '👑';
+            rankBadge.classList.add('gold');
+          } else if (rankIndex === 1) {
+            rankBadge.textContent = '🥈';
+            rankBadge.classList.add('silver');
+          } else if (rankIndex === 2) {
+            rankBadge.textContent = '🥉';
+            rankBadge.classList.add('bronze');
+          }
+          chip.appendChild(rankBadge);
+        }
+      }
+    });
+  }
+
+  function checkVoteChanges(state) {
+    const currentScores = state.scores || {};
+    
+    // Check for new votes and trigger animations
+    Object.entries(currentScores).forEach(([playerName, newScore]) => {
+      const oldScore = previousScores[playerName] || 0;
+      if (newScore > oldScore) {
+        animateVoteReceived(playerName);
+      }
+    });
+    
+    previousScores = { ...currentScores };
+  }
+
   /* ================= UTILS ================= */
   const storage = {
     set: (key, val) => {
@@ -30,6 +281,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const joinBtn = document.getElementById("joinBtn");
   const generateBtn = document.getElementById("generateBtn");
   const shareBtn = document.getElementById("shareBtn");
+  const inlineShareBtn = document.getElementById("inlineShareBtn");
   const roomStatus = document.getElementById("roomStatus");
   const participantBadge = document.getElementById("participantBadge");
   const participantCount = document.getElementById("participantCount");
@@ -70,6 +322,20 @@ document.addEventListener("DOMContentLoaded", () => {
   const cardEl = document.querySelector(".card");
   const subtitleEl = document.querySelector(".subtitle");
   const defaultSubtitle = subtitleEl ? subtitleEl.textContent : "";
+
+  // Host Controls Elements
+  const hostControlsPanel = document.getElementById("hostControlsPanel");
+  const hostControlsToggle = document.getElementById("hostControlsToggle");
+  const hostControlsContent = document.getElementById("hostControlsContent");
+  const hostToggleIcon = document.getElementById("hostToggleIcon");
+  const lockRoomBtn = document.getElementById("lockRoomBtn");
+
+  // Player View Elements
+  const categoryBadge = document.getElementById("categoryBadge");
+  const categoryEmoji = document.getElementById("categoryEmoji");
+  const categoryName = document.getElementById("categoryName");
+  const categoryProgress = document.getElementById("categoryProgress");
+  const waitingMessage = document.getElementById("waitingMessage");
 
   // Lobby Sub-screens
   const lobbyHome = document.getElementById("lobbyHome");
@@ -397,6 +663,118 @@ document.addEventListener("DOMContentLoaded", () => {
     const canProgress = (canHost || isMyTurn) && !!currentRoom;
     if (nextBtn) nextBtn.disabled = !canProgress;
     if (skipBtn) skipBtn.disabled = !canProgress;
+
+    // Show/hide host controls panel based on host status
+    if (hostControlsPanel) {
+      if (isHost) {
+        hostControlsPanel.classList.remove("hidden");
+        hostControlsPanel.classList.add("expanded"); // Start expanded for host
+        if (hostToggleIcon) hostToggleIcon.textContent = "▴";
+      } else {
+        hostControlsPanel.classList.add("hidden");
+        hostControlsPanel.classList.remove("expanded");
+      }
+    }
+
+    // Show/hide player view elements based on host status
+    if (categoryBadge) {
+      if (isHost) {
+        categoryBadge.classList.add("hidden");
+      } else {
+        categoryBadge.classList.remove("hidden");
+      }
+    }
+
+    if (waitingMessage) {
+      if (isHost) {
+        waitingMessage.classList.add("hidden");
+      } else {
+        waitingMessage.classList.remove("hidden");
+      }
+    }
+
+    // Hide regular controls for non-hosts
+    const regularControls = document.querySelector(".controls");
+    if (regularControls) {
+      regularControls.classList.toggle("hidden", !isHost);
+    }
+  }
+
+  function updateCategoryBadge(state) {
+    if (!categoryBadge || !categoryEmoji || !categoryName || !categoryProgress) return;
+    
+    const category = state.category || "all";
+    const total = state.total || 0;
+    const used = state.used || 0;
+    
+    // Get category emoji and name
+    const categoryInfo = {
+      all: { emoji: "🎲", name: "All" },
+      chill: { emoji: "🌙", name: "Chill" },
+      romance: { emoji: "💕", name: "Romance" },
+      funny: { emoji: "😂", name: "Funny" },
+      spicy: { emoji: "🔥", name: "Spicy" },
+      deep: { emoji: "🧠", name: "Deep" },
+      chaos: { emoji: "😈", name: "Chaos" },
+      work: { emoji: "💼", name: "Work" },
+      nostalgia: { emoji: "📼", name: "Nostalgia" },
+      creative: { emoji: "🎨", name: "Creative" },
+      movies: { emoji: "🎬", name: "Movies" },
+      sports: { emoji: "⚽", name: "Sports" },
+      travel: { emoji: "✈️", name: "Travel" },
+      food: { emoji: "🍕", name: "Food" },
+      music: { emoji: "🎵", name: "Music" },
+      gaming: { emoji: "🎮", name: "Gaming" },
+      romance: { emoji: "💕", name: "Romance" },
+      journey: { emoji: "🛤️", name: "Life Journey" },
+      mystery: { emoji: "🔮", name: "Mystery" },
+      tech: { emoji: "💻", name: "Tech" },
+      party: { emoji: "🎉", name: "Party Mix" },
+      soulful: { emoji: "😭", name: "Soulful" },
+      dares: { emoji: "🎯", name: "Dares" }
+    };
+
+    const info = categoryInfo[category] || categoryInfo.all;
+    
+    categoryEmoji.textContent = info.emoji;
+    categoryName.textContent = info.name;
+    categoryProgress.textContent = `${used} / ${total} questions`;
+    
+    // Apply category color
+    const rgb = categoryRgbPalette[category] || "255, 255, 255";
+    categoryBadge.style.setProperty("--cat-color-rgb", rgb);
+  }
+
+  function updateWaitingMessage(state) {
+    if (!waitingMessage || !turnBadge) return;
+    
+    const hasQuestion = state.currentQuestion && state.currentQuestion.trim() !== "";
+    const isMyTurn = state.currentTurnPlayer === currentName;
+    
+    if (!isHost && !hasQuestion && !isMyTurn) {
+      waitingMessage.classList.remove("hidden");
+      turnBadge.classList.add("hidden");
+    } else {
+      waitingMessage.classList.add("hidden");
+    }
+  }
+
+  function updateTurnBadgeWithHost(state) {
+    if (!turnBadge) return;
+    
+    const currentTurnPlayer = state.currentTurnPlayer;
+    if (!currentTurnPlayer) {
+      turnBadge.classList.add("hidden");
+      return;
+    }
+
+    // Check if current turn player is host
+    const players = state.playersV2 || {};
+    const currentPlayer = Object.values(players).find(p => p.name === currentTurnPlayer);
+    const isHostTurn = currentPlayer && currentPlayer.isHost;
+
+    turnBadge.textContent = isHostTurn ? `👑 Host's turn 🎤` : `${currentTurnPlayer}'s turn 🎤`;
+    turnBadge.classList.remove("hidden");
   }
 
   function enableGameUI(on) {
@@ -406,6 +784,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (game) game.classList.toggle("hidden", !on);
     if (leaveBtn) leaveBtn.classList.toggle("hidden", !on);
     if (playersToggle) playersToggle.classList.toggle("hidden", !on);
+    if (inlineShareBtn) inlineShareBtn.classList.toggle("hidden", !on);
 
     // Reset lobby sub-screens when going back to lobby
     if (!on) showLobbySubScreen("lobbyHome");
@@ -489,6 +868,12 @@ document.addEventListener("DOMContentLoaded", () => {
     setActivePill(state.category);
     updateCategoryGlow(state.category);
     updateProgress(used, total);
+
+    // Update host controls and player view
+    updateHostControls(state);
+    updateCategoryBadge(state);
+    updateWaitingMessage(state);
+    updateTurnBadgeWithHost(state);
 
     // Update Group Mood indicator
     const groupMoodEl = document.getElementById("groupMood");
@@ -597,7 +982,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
           playerList.appendChild(chip);
         });
-        playerList.classList.remove("hidden");
+        playerList.classList.toggle("hidden", !playersPanelVisible);
       } else {
         playerList.classList.add("hidden");
       }
@@ -718,100 +1103,24 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (leaderboard && leaderboardList) {
       if (isDone) {
-        // Calculate total scores from all categories
-        const categoryScores = state.categoryScores || {};
-        const totalScores = {};
-        Object.values(categoryScores).forEach(categoryScore => {
-          Object.entries(categoryScore).forEach(([name, score]) => {
-            totalScores[name] = (totalScores[name] || 0) + score;
-          });
-        });
+        // Use new podium UI system
+        leaderboardList.innerHTML = createPodiumUI(state);
         
-        const names = Object.values(state.players || {});
-        const uniqueNames = Array.from(new Set(names));
-        const entries = uniqueNames.map(name => ({ name, votes: totalScores[name] || 0 }));
-        entries.sort((a, b) => b.votes - a.votes);
-        
-        leaderboardList.innerHTML = "";
-        
-        if (entries.length === 0 || entries.every(e => e.votes === 0)) {
-          const li = document.createElement("li");
-          li.textContent = "No votes cast this session";
-          leaderboardList.appendChild(li);
-        } else {
-          // Create podium UI
-          const podium = document.createElement("div");
-          podium.className = "podium";
-          
-          const podiumStand = document.createElement("div");
-          podiumStand.className = "podium-stand";
-          
-          // Get top 3 players
-          const topThree = entries.filter(e => e.votes > 0).slice(0, 3);
-          const alsoPlayed = entries.filter(e => e.votes === 0);
-          
-          // Create podium places
-          topThree.forEach((entry, index) => {
-            const place = document.createElement("div");
-            place.className = `podium-place ${index === 0 ? 'first' : index === 1 ? 'second' : 'third'}`;
-            
-            const medal = document.createElement("div");
-            medal.className = "podium-medal";
-            medal.textContent = index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉';
-            
-            const name = document.createElement("div");
-            name.className = "podium-name";
-            name.textContent = entry.name;
-            
-            const score = document.createElement("div");
-            score.className = "podium-score";
-            score.textContent = `${entry.votes} vote${entry.votes !== 1 ? 's' : ''}`;
-            
-            const base = document.createElement("div");
-            base.className = "podium-base";
-            base.textContent = index + 1;
-            
-            place.appendChild(medal);
-            place.appendChild(name);
-            place.appendChild(score);
-            place.appendChild(base);
-            
-            podiumStand.appendChild(place);
-          });
-          
-          podium.appendChild(podiumStand);
-          
-          // Add "also played" section if needed
-          if (alsoPlayed.length > 0) {
-            const alsoPlayedSection = document.createElement("div");
-            alsoPlayedSection.className = "also-played";
-            
-            const alsoPlayedTitle = document.createElement("div");
-            alsoPlayedTitle.className = "also-played-title";
-            alsoPlayedTitle.textContent = "Also Played";
-            
-            const alsoPlayedList = document.createElement("div");
-            alsoPlayedList.className = "also-played-list";
-            
-            alsoPlayed.forEach(entry => {
-              const item = document.createElement("div");
-              item.className = "also-played-item";
-              item.textContent = entry.name;
-              alsoPlayedList.appendChild(item);
-            });
-            
-            alsoPlayedSection.appendChild(alsoPlayedTitle);
-            alsoPlayedSection.appendChild(alsoPlayedList);
-            podium.appendChild(alsoPlayedSection);
-          }
-          
-          leaderboardList.appendChild(podium);
+        // Add confetti burst for podium
+        if (!doneAlreadyPlayed) {
+          spawnConfetti(150);
         }
+        
         leaderboard.classList.remove("hidden");
       } else {
         leaderboard.classList.add("hidden");
       }
     }
+
+    // Add ranking system calls
+    checkVoteChanges(state);
+    updateRankBadges(state);
+    updateMiniLeaderboard(state);
 
     if (categoryScoreboard && categoryScoreList) {
       const scores = state.categoryScores ? state.categoryScores[state.category || "all"] : null;
@@ -1131,6 +1440,21 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // Old shareBtn functionality removed - now using inlineShareBtn only
+
+  if (inlineShareBtn) {
+    inlineShareBtn.addEventListener("click", async () => {
+      if (!currentRoom) return;
+      const inviteLink = `${window.location.origin}/?room=${currentRoom}`;
+      try {
+        await navigator.clipboard.writeText(inviteLink);
+        showToast("Room link copied!");
+      } catch (_) {
+        showToast("Couldn't copy \u2014 try manually");
+      }
+    });
+  }
+
   if (reactionBar) {
     reactionBar.addEventListener("click", e => {
       const btn = e.target.closest(".reaction-btn");
@@ -1212,18 +1536,50 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (leaveBtn) {
     leaveBtn.addEventListener("click", () => {
-      if (confirm("Are you sure you want to leave the room?")) {
+      if (confirm("Are you sure you want to leave room?")) {
         window.location.reload(); // Simple way to reset everything for now
       }
     });
   }
 
+  // Play Again button event listener (delegated since it's dynamically created)
+  document.addEventListener("click", (e) => {
+    if (e.target && e.target.id === "playAgainBtn") {
+      if (currentRoom && isHost) {
+        socket.emit("resetRoom", currentRoom);
+        showToast("Starting new round!");
+        doneAlreadyPlayed = false;
+      }
+    }
+  });
+
   if (playersToggle && playerList) {
     playersToggle.addEventListener("click", () => {
       playersPanelVisible = !playersPanelVisible;
       playerList.classList.toggle("hidden", !playersPanelVisible);
+      playersToggle.classList.toggle("active", playersPanelVisible);
+      
+      // Update button text with participant count
+      const participantCount = document.getElementById("participantCount");
+      const count = participantCount ? participantCount.textContent : "0";
+      playersToggle.innerHTML = playersPanelVisible 
+        ? `👥 Players (${count})`
+        : `👥 Players`;
     });
   }
+
+  // Close player panel when clicking outside
+  document.addEventListener("click", (e) => {
+    if (playersPanelVisible && playerList && !playerList.contains(e.target) && !playersToggle.contains(e.target)) {
+      playersPanelVisible = false;
+      playerList.classList.add("hidden");
+      playersToggle.classList.remove("active");
+      
+      const participantCount = document.getElementById("participantCount");
+      const count = participantCount ? participantCount.textContent : "0";
+      playersToggle.innerHTML = `👥 Players`;
+    }
+  });
 
   if (voteList) {
     voteList.addEventListener("click", e => {

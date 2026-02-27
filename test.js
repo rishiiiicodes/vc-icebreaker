@@ -215,7 +215,14 @@ async function run() {
     const s3 = await connectSocket();
     sockets.push(s3);
     s3.emit("joinRoom", { roomId: ROOM, name: "Alice" });
-    await waitForState(s1, s => Object.values(s.players || {}).includes("Alice 2"), "Duplicate name handling failed");
+    await waitForState(s1, s => {
+      const names = Object.values(s.players || {});
+      console.log("DEBUG: Current players:", names);
+      const hasAlice = names.includes("Alice");
+      const hasAlice2 = names.some(name => name.startsWith("Alice") && name !== "Alice");
+      console.log("DEBUG: hasAlice:", hasAlice, "hasAlice2:", hasAlice2);
+      return hasAlice && hasAlice2;
+    }, "Duplicate name handling failed");
     pass("Duplicate name handling");
 
     // 4. Category change

@@ -14,7 +14,9 @@ function createRoom(category = "chill") {
     timerEnabled: false,
     timerDuration: 60,
     isLocked: false,
-    lastActivity: Date.now()
+    lastActivity: Date.now(),
+    dominantMood: null, // most common mood among players
+    playerMoods: {} // { socketId: mood } for tracking individual player moods
   };
 }
 

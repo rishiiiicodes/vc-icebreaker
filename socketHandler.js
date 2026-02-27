@@ -184,16 +184,49 @@ module.exports = function socketHandler(io, logger) {
       const room = getRoom(roomId);
       if (!room) return;
       normalizeRoomPlayers(room);
+      if (!isHost(socket, room)) return;
       const safeCategory = typeof category === "string"
         ? category.toLowerCase().replace(/[^a-z]/g, "")
         : "";
-      if (!VALID_CATEGORIES.includes(safeCategory)) return;
+      changeCategory(room, safeCategory);
 
-      const prevCategory = changeCategory(room, safeCategory);
-      if (!prevCategory) return;
       updateActivity(room);
-      if (logger) logger.info({ room: roomId, from: prevCategory, to: safeCategory }, "CATEGORY_CHANGED");
 
+      if (logger) logger.info({ room: roomId, participants: getParticipantCount(roomId) }, "CATEGORY_CHANGED");
+      broadcastState(roomId);
+    });
+
+    socket.on("setMood", ({ roomId, mood }) => {
+      if (isRateLimited(socket.id, "setMood", 1000)) return;
+      const room = getRoom(roomId);
+      if (!room) return;
+      
+      // Store player's mood
+      room.playerMoods[socket.id] = mood;
+      
+      // Recalculate dominant mood
+      const moodCounts = {};
+      Object.values(room.playerMoods).forEach(playerMood => {
+        if (playerMood) {
+          moodCounts[playerMood] = (moodCounts[playerMood] || 0) + 1;
+        }
+      });
+      
+      // Find most common mood (ties broken randomly)
+      let maxCount = 0;
+      let dominantMood = null;
+      Object.entries(moodCounts).forEach(([moodName, count]) => {
+        if (count > maxCount) {
+          maxCount = count;
+          dominantMood = moodName;
+        } else if (count === maxCount && Math.random() < 0.5) {
+          // Random tie-breaker
+          dominantMood = moodName;
+        }
+      });
+      
+      room.dominantMood = dominantMood;
+      updateActivity(room);
       broadcastState(roomId);
     });
 
@@ -314,6 +347,9 @@ module.exports = function socketHandler(io, logger) {
 
       assignHost(room, targetId);
       updateActivity(room);
+      
+      // Emit host change event to all players
+      io.to(roomId).emit("hostChanged", { newHostName: target.name });
       broadcastState(roomId);
 
       if (logger) logger.info({ room: roomId, from: socket.id, to: targetId }, "HOST_TRANSFERRED");
@@ -356,8 +392,13 @@ module.exports = function socketHandler(io, logger) {
             if (wasHost) {
               const newHostId = reassignHost(room);
               if (newHostId) {
+                const newHost = room.players[newHostId];
                 updateActivity(room);
                 io.to(roomId).emit("hostUpdated", { id: newHostId });
+                // Emit host change notification
+                if (newHost) {
+                  io.to(roomId).emit("hostChanged", { newHostName: newHost.name });
+                }
               }
             }
           }

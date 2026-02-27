@@ -372,6 +372,97 @@ const QUESTIONS = {
       "What's a tech trend that you think is completely overrated?",
       "Privacy or Convenience: which one do you value more in the digital age?"
     ],
+    dares: {
+      chill: [
+        "Share your most unpopular opinion",
+        "What's a small thing that always makes your day better?",
+        "Describe your ideal Sunday morning",
+        "What's your go-to comfort movie when you're feeling down?",
+        "What's a place you've been that felt instantly like home?",
+        "What's your favorite way to spend a rainy day indoors?",
+        "What's the most relaxing sound in the world to you?",
+        "What's your ideal weekend with zero obligations?",
+        "Tea, coffee, or something completely different?",
+        "What's a hobby you abandoned but still think about?",
+        "What's a skill you wish you had?",
+        "Comfort food that hits different at midnight?",
+        "Beach or mountains and why are you wrong?",
+        "Dream vacation, unlimited budget?",
+        "Morning person or night owl no lies?",
+        "What's your go-to \"I need to relax\" activity?",
+        "Favorite season and your actual reason?",
+        "Overrated food everyone pretends to love?",
+        "Naps: overrated or underrated?"
+      ],
+      hype: [
+        "Do your best celebrity impression now",
+        "Show us your go-to dance move",
+        "What's your walk-up song?",
+        "Describe your personality using only a fast food order",
+        "What's the most unhinged thing in your search history?",
+        "If your life was a sitcom, what would it be called?",
+        "What's the most embarrassing song on your playlist?",
+        "Do your best movie trailer voice",
+        "What trend did you participate in that you deeply regret?",
+        "Show us your party trick",
+        "What's your signature karaoke song?",
+        "If you had to start a podcast, what's the premise?",
+        "What's your hype song before a big event?",
+        "What's the funniest thing that's ever happened to you at work?",
+        "Describe your worst date in exactly three words",
+        "What's a totally irrational fear you still have as an adult?",
+        "If you were a superhero, what's your power and weakness?",
+        "What's your go-to celebration dance?",
+        "Show us your best 'I just won' face"
+      ],
+      chaotic: [
+        "Send a voice note to your ex right now",
+        "Text your crush something completely random",
+        "Pick someone on this call to roast for 30 seconds",
+        "Delete your most recent social media post",
+        "You must start a cult. What's the central belief?",
+        "What's a crime you would commit if you knew you'd get away with it?",
+        "Everyone must agree on one law to pass right now — what do you propose?",
+        "You're starting a band. Band name and genre — go.",
+        "You wake up tomorrow as someone else on this call — what's the first thing you do?",
+        "You must send a voice note to your entire contact list right now — what do you say?",
+        "Two truths and a lie — go. Everyone has to guess which is the lie.",
+        "You must rename yourself right now. What's your new name and why?",
+        "If this call was a reality TV show, what would it be called and who gets eliminated first?",
+        "You have to quit your job and try something completely different tomorrow — what is it?",
+        "What's the most chaotic decision you could make in your life right now?",
+        "You're given $500 and 24 hours to spend it all — what do you do?",
+        "Fight one horse-sized duck or 100 duck-sized horses?",
+        "What's your most unhinged conspiracy theory that's actually plausible?",
+        "Swap lives with anyone for a week — who and why?",
+        "You host a dinner party: 3 guests, dead or alive. Who's there?"
+      ],
+      deep: [
+        "Tell us something you've never said out loud",
+        "What's your biggest fear, really?",
+        "How do you personally define success?",
+        "Best lesson a failure ever taught you?",
+        "What's something you changed your mind about completely?",
+        "What would you do if you knew you couldn't fail?",
+        "What's a compliment that stuck with you for years?",
+        "What part of yourself are you still figuring out?",
+        "What's the best advice you've ever received?",
+        "If you could relive one day, which one and why?",
+        "What does your ideal life look like in 10 years?",
+        "What's something you wish people understood about you?",
+        "What's a belief you hold that's hard to explain to others?",
+        "What does home mean to you?",
+        "What's something you've outgrown that used to define you?",
+        "What's a question you keep coming back to but can never fully answer?",
+        "Who has had the biggest influence on who you are today?",
+        "What's a version of yourself you had to leave behind?",
+        "What does rest mean to you — and do you let yourself have it?",
+        "What's something you know now that you wish you'd known at 18?",
+        "What's a small act of kindness someone did for you that you've never forgotten?",
+        "What's something you're still healing from?",
+        "If you could write a letter to your future self, what's one thing you'd say?"
+      ]
+    },
     party: [], // Mix of funny, chaos, music
     soulful: [] // Mix of deep, romance
   },
@@ -1141,7 +1232,7 @@ Object.keys(QUESTIONS).forEach(lang => {
     .flatMap(([, questions]) => questions);
 });
 
-const VALID_CATEGORIES = Object.keys(QUESTIONS.en).filter(k => k !== "all").concat("all");
+const VALID_CATEGORIES = Object.keys(QUESTIONS.en).filter(k => k !== "all").concat("all", "dares");
 const VALID_LANGUAGES = Object.keys(QUESTIONS);
 
 function getQuestionIndex(room, question) {
@@ -1156,7 +1247,19 @@ function getRandomQuestion(room, record = true) {
   if (!room?.category) return null;
 
   room.usedIndexes = room.usedIndexes || [];
-  const list = (QUESTIONS[lang] || QUESTIONS.en)[room.category] || [];
+  let list = (QUESTIONS[lang] || QUESTIONS.en)[room.category] || [];
+  
+  // Handle dares category with dominantMood
+  if (room.category === "dares") {
+    const dominantMood = room.dominantMood;
+    if (dominantMood && QUESTIONS[lang]?.dares?.[dominantMood]) {
+      list = QUESTIONS[lang].dares[dominantMood];
+    } else {
+      // Fallback to mixed pool of all moods
+      list = Object.values(QUESTIONS[lang]?.dares || {}).flat();
+    }
+  }
+  
   const usedSet = new Set(room.usedIndexes);
   const available = list.map((_, i) => i).filter(i => !usedSet.has(i));
 
