@@ -344,7 +344,7 @@ async function run() {
     await waitForState(s1, s => (s.usedIndexes || []).length === 0 && s.currentQuestion === null && s.currentTurn === 0, "Reset room failed");
     pass("Reset room");
 
-    // 12. Disconnect updates player list
+    // 13. Disconnect updates player list
     console.log("Starting test: Disconnect updates player list");
     s2.disconnect();
     let lastPlayers = [];
@@ -358,7 +358,7 @@ async function run() {
       fail(`Disconnect update failed (players: ${JSON.stringify(lastPlayers)})`);
     }
 
-    // 13. Host Ownership Transfer
+    // 14. Host Ownership Transfer
     console.log("Starting test: Host Ownership Transfer");
     const s2_new = await connectSocket();
     sockets.push(s2_new);
@@ -380,7 +380,7 @@ async function run() {
 
     pass("Host Ownership Transfer");
 
-    // 14. Shared Turn Control
+    // 15. Shared Turn Control
     console.log("Starting test: Shared Turn Control");
     s1.emit("nextQuestion", { roomId: ROOM });
     const stateStart = await waitForState(s1, s => !!s.currentQuestion, "Failed to start question for turn test");
@@ -408,7 +408,7 @@ async function run() {
     await waitForState(s1, s => s.currentQuestion !== prevQ, "Charlie (non-host) failed to advance turn");
     pass("Shared Turn Control");
 
-    // 15. All categories valid
+    // 16. All categories valid
     console.log("Starting test: All categories valid");
     const categories = ["chill", "funny", "spicy", "deep", "chaos", "work", "nostalgia", "creative"];
     for (const cat of categories) {
@@ -418,7 +418,7 @@ async function run() {
     }
     pass("All categories valid");
 
-    // 16. Hinglish Language Support
+    // 17. Hinglish Language Support
     console.log("Starting test: Hinglish Language Support");
     s1.emit("changeLanguage", { roomId: ROOM, language: "hinglish" });
     await waitForState(s1, s => s.language === "hinglish", "Hinglish language change failed");
@@ -436,6 +436,7 @@ async function run() {
     sockets.forEach(s => {
       try { s.disconnect(); } catch (_) { }
     });
+    await new Promise(resolve => httpServer.close(resolve));
   }
 
   results.forEach(r => {

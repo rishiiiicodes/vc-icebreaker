@@ -98,7 +98,7 @@ module.exports = function socketHandler(io, logger) {
         : (data || {});
       if (!rawRoomId || typeof rawRoomId !== "string") return;
       let roomId = rawRoomId.trim().toUpperCase().slice(0, 12);
-      if (!roomId) return;
+      if (!roomId || roomId.length < 2) return;
 
       // IP-based rate limit for room creation/joining to prevent spammer creating 1000s of rooms
       const clientIp = socket.handshake.address || socket.id;
@@ -178,7 +178,7 @@ module.exports = function socketHandler(io, logger) {
     });
 
     socket.on("changeCategory", ({ roomId, category }) => {
-      if (isRateLimited(socket.id, "changeCategory", 300)) return;
+      if (isRateLimited(socket.id, "changeCategory", 1000)) return;
       const room = getRoom(roomId);
       if (!room) return;
       normalizeRoomPlayers(room);
