@@ -747,15 +747,64 @@ body.light #nameInput {
   font-size: 10px;
   padding: 2px 6px;
   cursor: pointer;
-  transition: all 0.2s ease;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  font-weight: 700;
+  transition: all var(--transition);
 }
 
 .transfer-btn:hover {
   background: var(--accent);
   color: white;
+}
+
+.rank-badge {
+  font-size: 16px;
+  line-height: 1;
+  animation: rankPulse 2s ease-in-out infinite;
+}
+
+@keyframes rankPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+.player-name {
+  position: relative;
+}
+
+.player-name.vote-animated {
+  animation: voteFlash 0.6s ease-out;
+}
+
+@keyframes voteFlash {
+  0% { background: transparent; transform: scale(1); }
+  30% { background: rgba(34, 197, 94, 0.3); transform: scale(1.05); }
+  100% { background: transparent; transform: scale(1); }
+}
+
+.vote-float {
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #22c55e;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: bold;
+  pointer-events: none;
+  animation: floatUp 1.5s ease-out forwards;
+  z-index: 100;
+}
+
+@keyframes floatUp {
+  0% { 
+    opacity: 1; 
+    transform: translateX(-50%) translateY(0);
+  }
+  100% { 
+    opacity: 0; 
+    transform: translateX(-50%) translateY(-30px);
+  }
 }
 
 .badge-dot {
@@ -1403,8 +1452,9 @@ body.light .question-card {
   list-style: none;
   padding: 0;
   font-size: 13px;
-  display: flex;
-  flex-direction: column;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 6px 12px;
+  border-radius: 20px;
   gap: 6px;
 }
 
@@ -1414,11 +1464,6 @@ body.light .question-card {
   padding: 6px 12px;
   background: rgba(255, 255, 255, 0.05);
   border-radius: 8px;
-}
-
-/* ================= PROGRESS ================= */
-.progress-wrap {
-  display: flex;
   align-items: center;
   gap: 12px;
   margin: 10px 0 26px;
@@ -2200,4 +2245,138 @@ body.light .scoreboard-item {
 .pill.mix.active {
   background: linear-gradient(135deg, rgba(var(--category-color-rgb), 0.25), rgba(var(--category-color-rgb), 0.1));
   box-shadow: 0 0 15px rgba(var(--category-color-rgb), 0.2);
+}
+
+/* ================= PODIUM UI ================= */
+.podium {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  padding: 20px;
+  width: 100%;
+}
+
+.podium-stand {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 16px;
+  width: 100%;
+  min-height: 120px;
+}
+
+.podium-place {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  animation: podiumBounce 0.8s ease-out;
+}
+
+.podium-place.first {
+  order: 2;
+  transform: scale(1.1);
+}
+
+.podium-place.second {
+  order: 1;
+  transform: scale(0.95);
+}
+
+.podium-place.third {
+  order: 3;
+  transform: scale(0.9);
+}
+
+.podium-medal {
+  font-size: 48px;
+  line-height: 1;
+  margin-bottom: 8px;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+}
+
+.podium-name {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 4px;
+  color: var(--text);
+}
+
+.podium-score {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent);
+  background: rgba(255, 255, 255, 0.1);
+  padding: 4px 12px;
+  border-radius: 20px;
+}
+
+.podium-base {
+  width: 80px;
+  height: 40px;
+  background: linear-gradient(135deg, var(--accent), rgba(var(--accent-rgb), 0.7));
+  border-radius: 8px 8px 0 0;
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 700;
+  font-size: 18px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.podium-place.first .podium-base {
+  width: 90px;
+  height: 50px;
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+}
+
+.podium-place.second .podium-base {
+  width: 80px;
+  height: 40px;
+  background: linear-gradient(135deg, #94a3b8, #64748b);
+}
+
+.podium-place.third .podium-base {
+  width: 70px;
+  height: 30px;
+  background: linear-gradient(135deg, #f97316, #ea580c);
+}
+
+@keyframes podiumBounce {
+  0% { transform: translateY(-20px) scale(0.8); opacity: 0; }
+  50% { transform: translateY(5px) scale(1.05); }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+.also-played {
+  margin-top: 32px;
+  text-align: center;
+  width: 100%;
+}
+
+.also-played-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.also-played-list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+.also-played-item {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  color: var(--text-muted);
 }

@@ -501,9 +501,27 @@ document.addEventListener("DOMContentLoaded", () => {
       const players = Object.values(state.playersV2 || {});
       if (players.length > 0) {
         playerList.innerHTML = "";
-        players.forEach(p => {
+
+        // Calculate total scores for ranking
+        const categoryScores = state.categoryScores || {};
+        const totalScores = {};
+        Object.values(categoryScores).forEach(categoryScore => {
+          Object.entries(categoryScore).forEach(([name, score]) => {
+            totalScores[name] = (totalScores[name] || 0) + score;
+          });
+        });
+
+        // Sort players by total score for ranking
+        const sortedPlayers = [...players].sort((a, b) => {
+          const scoreA = totalScores[a.name] || 0;
+          const scoreB = totalScores[b.name] || 0;
+          return scoreB - scoreA;
+        });
+
+        sortedPlayers.forEach((p, rankIndex) => {
           const chip = document.createElement("div");
           chip.className = `player-chip ${p.isHost ? "is-host" : ""}`;
+          chip.dataset.playerName = p.name;
 
           if (p.isHost) {
             const crown = document.createElement("span");
@@ -514,8 +532,21 @@ document.addEventListener("DOMContentLoaded", () => {
             chip.appendChild(document.createTextNode(" "));
           }
 
+          // Add rank badge for top 3 players with scores
+          const playerScore = totalScores[p.name] || 0;
+          if (playerScore > 0 && rankIndex < 3) {
+            const rankBadge = document.createElement("span");
+            rankBadge.className = "rank-badge";
+            if (rankIndex === 0) rankBadge.textContent = "👑";
+            else if (rankIndex === 1) rankBadge.textContent = "🥈";
+            else if (rankIndex === 2) rankBadge.textContent = "🥉";
+            chip.appendChild(rankBadge);
+            chip.appendChild(document.createTextNode(" "));
+          }
+
           const nameSpan = document.createElement("span");
           nameSpan.textContent = p.name;
+          nameSpan.className = "player-name";
           chip.appendChild(nameSpan);
 
           if (!p.isHost && isHost) {
@@ -547,7 +578,33 @@ document.addEventListener("DOMContentLoaded", () => {
         const idxRaw = typeof state.currentTurn === "number" ? state.currentTurn : 0;
         const idx = ((idxRaw % names.length) + names.length) % names.length;
         const turnName = names[idx];
-        turnBadge.textContent = `${turnName}'s turn`;
+        
+        // Create turn badge with score ticker
+        turnBadge.innerHTML = `${turnName}'s turn`;
+        
+        // Add score ticker for current question votes
+        const scores = state.scores || {};
+        const voteCounts = names.map(name => ({
+          name,
+          votes: scores[name] || 0
+        })).filter(p => p.votes > 0);
+        
+        if (voteCounts.length > 0) {
+          const ticker = document.createElement("div");
+          ticker.className = "score-ticker";
+          ticker.style.fontSize = "11px";
+          ticker.style.color = "var(--text-muted)";
+          ticker.style.marginTop = "2px";
+          ticker.style.fontWeight = "500";
+          
+          const tickerText = voteCounts
+            .map(p => `${p.name}: ${p.votes}`)
+            .join(" • ");
+          ticker.textContent = tickerText;
+          
+          turnBadge.appendChild(ticker);
+        }
+        
         turnBadge.classList.remove("hidden");
       } else {
         turnBadge.classList.add("hidden");
@@ -630,22 +687,94 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (leaderboard && leaderboardList) {
       if (isDone) {
-        const scores = state.scores || {};
+        // Calculate total scores from all categories
+        const categoryScores = state.categoryScores || {};
+        const totalScores = {};
+        Object.values(categoryScores).forEach(categoryScore => {
+          Object.entries(categoryScore).forEach(([name, score]) => {
+            totalScores[name] = (totalScores[name] || 0) + score;
+          });
+        });
+        
         const names = Object.values(state.players || {});
         const uniqueNames = Array.from(new Set(names));
-        const entries = uniqueNames.map(name => ({ name, votes: scores[name] || 0 }));
+        const entries = uniqueNames.map(name => ({ name, votes: totalScores[name] || 0 }));
         entries.sort((a, b) => b.votes - a.votes);
+        
         leaderboardList.innerHTML = "";
+        
         if (entries.length === 0 || entries.every(e => e.votes === 0)) {
           const li = document.createElement("li");
           li.textContent = "No votes cast this session";
           leaderboardList.appendChild(li);
         } else {
-          entries.forEach(e => {
-            const li = document.createElement("li");
-            li.textContent = `${e.name}  ${e.votes} vote(s)`;
-            leaderboardList.appendChild(li);
+          // Create podium UI
+          const podium = document.createElement("div");
+          podium.className = "podium";
+          
+          const podiumStand = document.createElement("div");
+          podiumStand.className = "podium-stand";
+          
+          // Get top 3 players
+          const topThree = entries.filter(e => e.votes > 0).slice(0, 3);
+          const alsoPlayed = entries.filter(e => e.votes === 0);
+          
+          // Create podium places
+          topThree.forEach((entry, index) => {
+            const place = document.createElement("div");
+            place.className = `podium-place ${index === 0 ? 'first' : index === 1 ? 'second' : 'third'}`;
+            
+            const medal = document.createElement("div");
+            medal.className = "podium-medal";
+            medal.textContent = index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉';
+            
+            const name = document.createElement("div");
+            name.className = "podium-name";
+            name.textContent = entry.name;
+            
+            const score = document.createElement("div");
+            score.className = "podium-score";
+            score.textContent = `${entry.votes} vote${entry.votes !== 1 ? 's' : ''}`;
+            
+            const base = document.createElement("div");
+            base.className = "podium-base";
+            base.textContent = index + 1;
+            
+            place.appendChild(medal);
+            place.appendChild(name);
+            place.appendChild(score);
+            place.appendChild(base);
+            
+            podiumStand.appendChild(place);
           });
+          
+          podium.appendChild(podiumStand);
+          
+          // Add "also played" section if needed
+          if (alsoPlayed.length > 0) {
+            const alsoPlayedSection = document.createElement("div");
+            alsoPlayedSection.className = "also-played";
+            
+            const alsoPlayedTitle = document.createElement("div");
+            alsoPlayedTitle.className = "also-played-title";
+            alsoPlayedTitle.textContent = "Also Played";
+            
+            const alsoPlayedList = document.createElement("div");
+            alsoPlayedList.className = "also-played-list";
+            
+            alsoPlayed.forEach(entry => {
+              const item = document.createElement("div");
+              item.className = "also-played-item";
+              item.textContent = entry.name;
+              alsoPlayedList.appendChild(item);
+            });
+            
+            alsoPlayedSection.appendChild(alsoPlayedTitle);
+            alsoPlayedSection.appendChild(alsoPlayedList);
+            podium.appendChild(alsoPlayedSection);
+          }
+          
+          leaderboardList.appendChild(podium);
         }
         leaderboard.classList.remove("hidden");
       } else {
@@ -688,6 +817,42 @@ document.addEventListener("DOMContentLoaded", () => {
 
     animateQuestion(state.currentQuestion || (used === 0 ? "Click Next Question to begin." : null));
     lastQuestion = state.currentQuestion;
+
+    // Track vote changes for animations
+    if (lastState && state.scores) {
+      Object.entries(state.scores).forEach(([playerName, newScore]) => {
+        const oldScore = lastState.scores[playerName] || 0;
+        if (newScore > oldScore) {
+          // Player received a vote, trigger animation
+          animateVoteReceived(playerName);
+        }
+      });
+    }
+  }
+
+  function animateVoteReceived(playerName) {
+    const playerChip = document.querySelector(`[data-player-name="${playerName}"]`);
+    if (!playerChip) return;
+    
+    const nameSpan = playerChip.querySelector('.player-name');
+    if (!nameSpan) return;
+    
+    // Add flash animation to player name
+    nameSpan.classList.add('vote-animated');
+    setTimeout(() => nameSpan.classList.remove('vote-animated'), 600);
+    
+    // Create floating +1 label
+    const floatLabel = document.createElement('div');
+    floatLabel.className = 'vote-float';
+    floatLabel.textContent = '+1';
+    nameSpan.appendChild(floatLabel);
+    
+    // Remove floating label after animation
+    setTimeout(() => {
+      if (floatLabel.parentNode) {
+        floatLabel.parentNode.removeChild(floatLabel);
+      }
+    }, 1500);
   }
 
   /* ================= JOIN ROOM ================= */
