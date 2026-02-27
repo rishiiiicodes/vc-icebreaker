@@ -1073,9 +1073,34 @@ body.light .btn.ghost {
   --pill-color-rgb: 124, 231, 255;
 }
 
-.pill[data-value="chaos"] {
-  --pill-color: #ff73b4;
-  --pill-color-rgb: 255, 115, 180;
+.pill[data-value="dares"] {
+  --pill-color: #ff6b35;
+  --pill-color-rgb: 255, 107, 53;
+}
+
+.pill[data-value="journey"] {
+  --pill-color: #fbbf24;
+  --pill-color-rgb: 251, 191, 36;
+}
+
+.pill[data-value="mystery"] {
+  --pill-color: #6366f1;
+  --pill-color-rgb: 99, 102, 241;
+}
+
+.pill[data-value="tech"] {
+  --pill-color: #0ea5e9;
+  --pill-color-rgb: 14, 165, 233;
+}
+
+.pill[data-value="party"] {
+  --pill-color: #fcd34d;
+  --pill-color-rgb: 252, 211, 77;
+}
+
+.pill[data-value="soulful"] {
+  --pill-color: #ec4899;
+  --pill-color-rgb: 236, 72, 153;
 }
 
 .pill[data-value="work"] {
@@ -2379,4 +2404,86 @@ body.light .scoreboard-item {
   border-radius: 20px;
   font-size: 12px;
   color: var(--text-muted);
+}
+
+/* ================= MOOD SELECTOR ================= */
+.mood-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.mood-selector {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.mood-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 12px;
+  min-width: 80px;
+}
+
+.mood-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+.mood-btn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+}
+
+.mood-emoji {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.mood-text {
+  font-size: 11px;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* ================= GROUP MOOD INDICATOR ================= */
+.group-mood {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  margin-top: 8px;
+  margin-left: auto;
+}
+
+.group-mood-emoji {
+  font-size: 16px;
+}
+
+.group-mood-text {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.group-mood-none {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-style: italic;
 }

@@ -20,6 +20,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentRoom = null;
   let currentState = null;
   let currentName = "";
+  let selectedMood = null;
   let currentHostId = null;
   let isHost = false;
 
@@ -81,6 +82,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const createBtn = document.getElementById("createBtn");
   const nameInputHost = document.getElementById("nameInputHost");
   const nameInputJoin = document.getElementById("nameInputJoin");
+  const moodSelectHost = document.getElementById("moodSelectHost");
+  const moodSelectJoin = document.getElementById("moodSelectJoin");
 
   /* ================= PARTICLE COLORS ================= */
   const particlePalette = {
@@ -104,7 +107,8 @@ document.addEventListener("DOMContentLoaded", () => {
     mystery: "#6366f1",
     tech: "#0ea5e9",
     party: "#fcd34d",
-    soulful: "#ec4899"
+    soulful: "#ec4899",
+    dares: "#f97316"
   };
 
   const categoryRgbPalette = {
@@ -128,6 +132,7 @@ document.addEventListener("DOMContentLoaded", () => {
     mystery: "99, 102, 241",
     tech: "14, 165, 233",
     party: "252, 211, 77",
+    dares: "249, 115, 22",
     soulful: "236, 72, 153"
   };
 
@@ -484,6 +489,32 @@ document.addEventListener("DOMContentLoaded", () => {
     setActivePill(state.category);
     updateCategoryGlow(state.category);
     updateProgress(used, total);
+
+    // Update Group Mood indicator
+    const groupMoodEl = document.getElementById("groupMood");
+    if (groupMoodEl) {
+      if (state.dominantMood) {
+        const moodEmojis = {
+          chill: "😌",
+          hype: "⚡", 
+          chaotic: "🔥",
+          deep: "🌊"
+        };
+        
+        const moodTexts = {
+          chill: "Chill",
+          hype: "Hype",
+          chaotic: "Chaotic", 
+          deep: "Deep"
+        };
+        
+        groupMoodEl.querySelector(".group-mood-emoji").textContent = moodEmojis[state.dominantMood] || "😌";
+        groupMoodEl.querySelector(".group-mood-text").textContent = moodTexts[state.dominantMood] || "Chill";
+        groupMoodEl.classList.remove("hidden");
+      } else {
+        groupMoodEl.classList.add("hidden");
+      }
+    }
 
     if (typeof state.participants === "number") {
       participantCount.textContent = state.participants;
@@ -875,7 +906,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const activeLang = languageOptions ? languageOptions.querySelector(".lang-btn.active") : null;
     const lang = activeLang ? activeLang.dataset.lang : "en";
 
-    socket.emit("joinRoom", { roomId: room, name: currentName, language: lang });
+    socket.emit("joinRoom", { roomId: room, name: currentName, language: lang, mood: selectedMood });
 
     roomStatus.textContent = `Room: ${room}`;
     if (subtitleEl) subtitleEl.textContent = `Room: ${room}`;
@@ -965,6 +996,21 @@ document.addEventListener("DOMContentLoaded", () => {
     if (themeSelector) themeSelector.classList.add("hidden");
     if (languageControls) languageControls.classList.add("hidden");
   }
+
+  // Mood selector event listeners
+  [moodSelectHost, moodSelectJoin].forEach(selector => {
+    if (selector) {
+      selector.addEventListener("click", e => {
+        const moodBtn = e.target.closest(".mood-btn");
+        if (moodBtn) {
+          // Remove active class from all buttons in this selector
+          selector.querySelectorAll(".mood-btn").forEach(btn => btn.classList.remove("active"));
+          moodBtn.classList.add("active");
+          selectedMood = moodBtn.dataset.mood;
+        }
+      });
+    }
+  });
 
   /* ================= SOCKET EVENTS ================= */
   socket.on("roomState", state => {
