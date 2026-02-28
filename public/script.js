@@ -48,6 +48,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const inlineShareBtn    = document.getElementById("inlineShareBtn");
   const playersToggle     = document.getElementById("playersToggle");
   const leaveBtn          = document.getElementById("leaveBtn");
+  const installBtn        = document.getElementById("installBtn");
 
   // Host controls panel
   const hostControlsPanel   = document.getElementById("hostControlsPanel");
@@ -1176,23 +1177,19 @@ function updateUIFromState(state, isFirstState) {
 
   /* ================= PWA INSTALL ================= */
   let deferredPrompt = null;
-  const installBtn = document.getElementById("installBtn");
   window.addEventListener("beforeinstallprompt", e => {
     e.preventDefault(); deferredPrompt = e;
     if (installBtn) installBtn.classList.remove("hidden");
   });
-  if (installBtn) {
-    installBtn.addEventListener("click", async () => {
-      if (!deferredPrompt) return;
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === "accepted") installBtn.classList.add("hidden");
-      deferredPrompt = null;
-    });
-  }
+  installBtn.addEventListener("click", async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === "accepted") installBtn.classList.add("hidden");
+    deferredPrompt = null;
+  });
   window.addEventListener("appinstalled", () => {
     if (installBtn) installBtn.classList.add("hidden");
     showToast("App installed!");
   });
-
 });
