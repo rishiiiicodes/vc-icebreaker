@@ -39,6 +39,56 @@
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <div id="reactionStage" aria-hidden="true"></div>
 
+  <!-- ===== HOST MODAL ===== -->
+  <div id="lobbyHost" class="lobby-modal hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title">Host a Room 🎮</h2>
+        <button type="button" id="backToHomeHost" class="modal-close" aria-label="Close">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="nameInputHost">Your Name</label>
+          <input type="text" id="nameInputHost" placeholder="Enter your name..." maxlength="20" autocomplete="off" />
+        </div>
+        <div class="form-group">
+          <label>Room Code</label>
+          <div class="room-code-display">
+            <div class="room-code" id="hostRoomCode">EPICTEAM42</div>
+            <button type="button" id="regenerateBtn" class="regenerate-btn" title="Generate new code">🔄</button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="createBtn" class="btn primary">🚀 Create Room</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== JOIN MODAL ===== -->
+  <div id="lobbyJoin" class="lobby-modal hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title">Join a Room 🔗</h2>
+        <button type="button" id="backToHomeJoin" class="modal-close" aria-label="Close">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="nameInputJoin">Your Name</label>
+          <input type="text" id="nameInputJoin" placeholder="Enter your name..." maxlength="20" autocomplete="off" />
+        </div>
+        <div class="form-group">
+          <label for="roomInput">Room Code</label>
+          <input type="text" id="roomInput" placeholder="e.g. EPICTEAM42" maxlength="12" autocomplete="off"
+            style="text-transform:uppercase; letter-spacing:0.08em; font-weight:700;" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="joinBtn" class="btn primary">🔗 Join Room</button>
+      </div>
+    </div>
+  </div>
+
   <main class="app">
     <section class="card" role="region" aria-labelledby="app-title">
 
@@ -52,19 +102,6 @@
           </div>
         </div>
         <div class="top-actions">
-          <div class="theme-selector hidden" id="themeSelector" aria-label="Select background theme">
-            <button class="theme-dot active" data-theme="classic" title="Classic Theme"
-              style="--dot-color: #18d5c4;"></button>
-            <button class="theme-dot" data-theme="midnight" title="Midnight Theme" style="--dot-color: #444;"></button>
-            <button class="theme-dot" data-theme="aura" title="Aura Theme" style="--dot-color: #ff73b4;"></button>
-            <button class="theme-dot" data-theme="ocean" title="Ocean Theme" style="--dot-color: #38bdf8;"></button>
-            <button class="theme-dot" data-theme="forest" title="Forest Theme" style="--dot-color: #34d399;"></button>
-            <button class="theme-dot" data-theme="slate" title="Slate Theme" style="--dot-color: #64748b;"></button>
-            <button class="theme-dot" data-theme="amethyst" title="Amethyst Theme"
-              style="--dot-color: #a855f7;"></button>
-            <button class="theme-dot" data-theme="ember" title="Ember Theme" style="--dot-color: #f97316;"></button>
-            <button class="theme-dot" data-theme="ivory" title="Ivory Theme" style="--dot-color: #f5f5f4;"></button>
-          </div>
           <div class="language-controls hidden" id="languageControls">
             <div class="language-options" id="languageOptions">
               <button class="lang-btn active" data-lang="en" title="English">EN</button>
@@ -73,168 +110,382 @@
             </div>
           </div>
           <button type="button" id="playersToggle" class="btn ghost hidden" aria-label="Show players in room">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
-              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-              <circle cx="9" cy="7" r="4" />
-              <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-              <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-            </svg>
-            Players
+            👥 Players
           </button>
           <button type="button" id="leaveBtn" class="btn danger hidden" title="Leave current room">🚪 Leave</button>
         </div>
       </div>
 
-      <!-- Lobby Screen -->
+      <!-- ===== LANDING PAGE ===== -->
       <div id="lobbyScreen" class="screen">
-        <div class="lobby-container reveal" style="--delay: 80ms;">
-
-          <!-- Lobby Home: Role Selection -->
-          <div id="lobbyHome" class="lobby-sub-screen">
-            <div class="lobby-hero">
-              <h2 class="lobby-title">Pick your role</h2>
-              <p class="lobby-subtitle">How do you want to play today?</p>
-            </div>
-            <div class="lobby-options">
-              <button type="button" id="goHostBtn" class="lobby-card host-mode">
-                <div class="card-icon">👑</div>
-                <div class="card-text">
-                  <h3>Host Game</h3>
-                  <p>Start a new room and invite your squad</p>
-                </div>
-              </button>
-              <button type="button" id="goJoinBtn" class="lobby-card join-mode">
-                <div class="card-icon">🤝</div>
-                <div class="card-text">
-                  <h3>Join Room</h3>
-                  <p>Already have a code? Hop right in</p>
-                </div>
-              </button>
-            </div>
+        <div id="lobbyHome">
+          <div class="bg-orbs">
+            <div class="orb orb-left"></div>
+            <div class="orb orb-right"></div>
           </div>
+          <div class="noise-overlay"></div>
 
-          <!-- Lobby: Host Form -->
-          <div id="lobbyHost" class="lobby-sub-screen hidden">
-            <div class="sub-screen-header">
-              <button type="button" class="back-btn" id="backToHomeHost">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                  stroke-linecap="round" stroke-linejoin="round">
-                  <line x1="19" y1="12" x2="5" y2="12"></line>
-                  <polyline points="12 19 5 12 12 5"></polyline>
+          <div class="landing-container reveal" style="--delay: 80ms;">
+
+            <!-- Hero Section -->
+            <div class="landing-hero">
+              <div class="hero-content">
+                <div class="hero-emoji-wrapper">
+                  <span class="hero-emoji">🎤</span>
+                </div>
+                <h1 class="hero-title">VC Icebreaker</h1>
+                <p class="hero-tagline">Break the ice. Not the silence.</p>
+                <p class="hero-social-proof">Trusted by remote teams worldwide 🌍</p>
+                <div class="hero-cta">
+                  <button type="button" id="goHostBtn" class="hero-btn primary">🎮 Host a Room</button>
+                  <button type="button" id="goJoinBtn" class="hero-btn secondary">🔗 Join a Room</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Floating Pills (decorative) -->
+            <div class="floating-pills">
+              <div class="pills-row pills-left">
+                <span class="pill chill">🌙 Chill</span>
+                <span class="pill funny">😂 Funny</span>
+                <span class="pill spicy">🔥 Spicy</span>
+                <span class="pill deep">🧠 Deep</span>
+                <span class="pill chaos">😈 Chaos</span>
+                <span class="pill work">💼 Work</span>
+                <span class="pill nostalgia">📼 Nostalgia</span>
+                <span class="pill creative">🎨 Creative</span>
+              </div>
+              <div class="pills-row pills-right">
+                <span class="pill movies">🎬 Movies</span>
+                <span class="pill sports">⚽ Sports</span>
+                <span class="pill travel">✈️ Travel</span>
+                <span class="pill food">🍕 Food</span>
+                <span class="pill music">🎵 Music</span>
+                <span class="pill gaming">🎮 Gaming</span>
+                <span class="pill romance">💕 Romance</span>
+                <span class="pill mystery">🔮 Mystery</span>
+              </div>
+            </div>
+
+            <!-- How It Works -->
+            <div class="how-it-works">
+              <h2 class="section-title">How it works</h2>
+              <div class="steps-grid">
+                <div class="step-card glass-card">
+                  <div class="step-number">01</div>
+                  <div class="step-icon">🏠</div>
+                  <div class="step-content">
+                    <h3 class="step-title">Create a Room</h3>
+                    <p class="step-description">Host starts a private room in seconds. Share code with your team.</p>
+                  </div>
+                </div>
+                <div class="step-card glass-card">
+                  <div class="step-number">02</div>
+                  <div class="step-icon">🎯</div>
+                  <div class="step-content">
+                    <h3 class="step-title">Pick a Category</h3>
+                    <p class="step-description">Choose from 20+ categories — chill, spicy, deep, chaos and more.</p>
+                  </div>
+                </div>
+                <div class="step-card glass-card">
+                  <div class="step-number">03</div>
+                  <div class="step-icon">💬</div>
+                  <div class="step-content">
+                    <h3 class="step-title">Break the Ice</h3>
+                    <p class="step-description">Answer questions, react with emojis, vote for best answer. Actually get to know each other.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Categories Showcase -->
+            <div class="categories-showcase">
+              <h2 class="section-title">20+ Categories to explore</h2>
+              <div class="showcase-row showcase-left">
+                <span class="showcase-pill chill">🌙 Chill</span>
+                <span class="showcase-pill funny">😂 Funny</span>
+                <span class="showcase-pill spicy">🔥 Spicy</span>
+                <span class="showcase-pill deep">🧠 Deep</span>
+                <span class="showcase-pill chaos">😈 Chaos</span>
+                <span class="showcase-pill work">💼 Work</span>
+                <span class="showcase-pill nostalgia">📼 Nostalgia</span>
+                <span class="showcase-pill creative">🎨 Creative</span>
+                <span class="showcase-pill movies">🎬 Movies</span>
+                <span class="showcase-pill sports">⚽ Sports</span>
+              </div>
+              <div class="showcase-row showcase-right">
+                <span class="showcase-pill travel">✈️ Travel</span>
+                <span class="showcase-pill food">🍕 Food</span>
+                <span class="showcase-pill music">🎵 Music</span>
+                <span class="showcase-pill gaming">🎮 Gaming</span>
+                <span class="showcase-pill romance">💕 Romance</span>
+                <span class="showcase-pill journey">🛤️ Journey</span>
+                <span class="showcase-pill mystery">🔮 Mystery</span>
+                <span class="showcase-pill tech">💻 Tech</span>
+                <span class="showcase-pill party">🎉 Party</span>
+              </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="landing-footer">
+              <p class="footer-text">Made for remote teams 🌍</p>
+              <a href="https://github.com/rishiiiicodes/vc-icebreaker" target="_blank" class="footer-link" aria-label="View on GitHub">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0 1 12 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/>
                 </svg>
-              </button>
-              <h3 class="sub-screen-title">Host a Room</h3>
+              </a>
             </div>
-            <div class="room-join">
-              <div class="room-join-row inputs">
-                <input type="text" id="nameInputHost" placeholder="Your name" maxlength="20" autocomplete="off"
-                  aria-label="Enter your name" spellcheck="false" />
-              </div>
-              <div class="room-join-row">
-                <label class="mood-label" for="moodSelectHost">Your current mood (optional)</label>
-                <div class="mood-selector" id="moodSelectHost">
-                  <button type="button" class="mood-btn" data-mood="chill" title="Relaxed and chill">
-                    <span class="mood-emoji">😌</span>
-                    <span class="mood-text">Chill</span>
-                  </button>
-                  <button type="button" class="mood-btn" data-mood="hype" title="Energetic and fun">
-                    <span class="mood-emoji">⚡</span>
-                    <span class="mood-text">Hype</span>
-                  </button>
-                  <button type="button" class="mood-btn" data-mood="chaotic" title="Wild and unpredictable">
-                    <span class="mood-emoji">🔥</span>
-                    <span class="mood-text">Chaotic</span>
-                  </button>
-                  <button type="button" class="mood-btn" data-mood="deep" title="Thoughtful and emotional">
-                    <span class="mood-emoji">🌊</span>
-                    <span class="mood-text">Deep</span>
-                  </button>
+          </div>
+        </div><!-- end #lobbyHome -->
+      </div><!-- end #lobbyScreen -->
+
+      <!-- ===== CATEGORY SELECTION SCREEN ===== -->
+      <div id="categorySelectScreen" class="screen hidden">
+        <div class="category-select-container reveal" style="--delay: 80ms;">
+
+          <!-- Host View -->
+          <div id="hostCategoryView" class="category-view hidden">
+            <div class="category-header">
+              <h2 class="category-title">Choose a Category 🎯</h2>
+              <p class="category-subtitle" id="playerCountText">1 player is ready — pick a category to begin</p>
+            </div>
+
+            <div class="category-grid">
+              <button type="button" class="category-card" data-category="chill">
+                <div class="card-emoji">🌙</div>
+                <div class="card-content">
+                  <h3 class="card-title">Chill</h3>
+                  <p class="card-description">Relax and vibe 😌</p>
+                  <div class="question-count">24 questions</div>
                 </div>
+              </button>
+              <button type="button" class="category-card" data-category="funny">
+                <div class="card-emoji">😂</div>
+                <div class="card-content">
+                  <h3 class="card-title">Funny</h3>
+                  <p class="card-description">Laugh until it hurts 😂</p>
+                  <div class="question-count">24 questions</div>
+                </div>
+              </button>
+              <button type="button" class="category-card" data-category="spicy">
+                <div class="card-emoji">🔥</div>
+                <div class="card-content">
+                  <h3 class="card-title">Spicy</h3>
+                  <p class="card-description">Hot takes only 🌶️</p>
+                  <div class="question-count">24 questions</div>
+                </div>
+              </button>
+              <button type="button" class="category-card" data-category="deep">
+                <div class="card-emoji">🧠</div>
+                <div class="card-content">
+                  <h3 class="card-title">Deep</h3>
+                  <p class="card-description">Get philosophical 🌊</p>
+                  <div class="question-count">24 questions</div>
+                </div>
+              </button>
+              <button type="button" class="category-card" data-category="chaos">
+                <div class="card-emoji">😈</div>
+                <div class="card-content">
+                  <h3 class="card-title">Chaos</h3>
+                  <p class="card-description">Pure unhinged energy 🌀</p>
+                  <div class="question-count">24 questions</div>
+                </div>
+              </button>
+              <button type="button" class="category-card" data-category="work">
+                <div class="card-emoji">💼</div>
+                <div class="card-content">
+                  <h3 class="card-title">Work</h3>
+                  <p class="card-description">Team building done right 💼</p>
+                  <div class="question-count">25 questions</div>
+                </div>
+              </button>
+              <button type="button" class="category-card" data-category="nostalgia">
+                <div class="card-emoji">📼</div>
+                <div class="card-content">
+                  <h3 class="card-title">Nostalgia</h3>
+                  <p class="card-description">Remember when... 🕰️</p>
+                  <div class="question-count">25 questions</div>
+                </div>
+              </button>
+              <button type="button" class="category-card" data-category="creative">
+                <div class="card-emoji">🎨</div>
+                <div class="card-content">
+                  <h3 class="card-title">Creative</h3>
+                  <p class="card-description">Unleash your imagination 🎨</p>
+                  <div class="question-count">25 questions</div>
+                </div>
+              </button>
+              <button type="button" class="category-card" data-category="movies">
+                <div class="card-emoji">🎬</div>
+                <div class="card-content">
+                  <h3 class="card-title">Movies & TV</h3>
+                  <p class="card-description">Lights, camera, action 🎬</p>
+                  <div class="question-count">15 questions</div>
+                </div>
+              </button>
+              <button type="button" class="category-card" data-category="sports">
+                <div class="card-emoji">⚽</div>
+                <div class="card-content">
+                  <h3 class="card-title">Sports</h3>
+                  <p class="card-description">Game on ⚽</p>
+                  <div class="question-count">15 questions</div>
+                </div>
+              </button>
+              <button type="button" class="category-card" data-category="travel">
+                <div class="card-emoji">✈️</div>
+                <div class="card-content">
+                  <h3 class="card-title">Travel</h3>
+                  <p class="card-description">Wanderlust activated ✈️</p>
+                  <div class="question-count">15 questions</div>
+                </div>
+              </button>
+              <button type="button" class="category-card" data-category="food">
+                <div class="card-emoji">🍕</div>
+                <div class="card-content">
+                  <h3 class="card-title">Food</h3>
+                  <p class="card-description">We eat first 🍕</p>
+                  <div class="question-count">15 questions</div>
+                </div>
+              </button>
+              <button type="button" class="category-card" data-category="music">
+                <div class="card-emoji">🎵</div>
+                <div class="card-content">
+                  <h3 class="card-title">Music</h3>
+                  <p class="card-description">Drop the beat 🎵</p>
+                  <div class="question-count">15 questions</div>
+                </div>
+              </button>
+              <button type="button" class="category-card" data-category="gaming">
+                <div class="card-emoji">🎮</div>
+                <div class="card-content">
+                  <h3 class="card-title">Gaming</h3>
+                  <p class="card-description">GG no re 🎮</p>
+                  <div class="question-count">15 questions</div>
+                </div>
+              </button>
+              <button type="button" class="category-card" data-category="romance">
+                <div class="card-emoji">💕</div>
+                <div class="card-content">
+                  <h3 class="card-title">Romance</h3>
+                  <p class="card-description">Love is in the air 💕</p>
+                  <div class="question-count">15 questions</div>
+                </div>
+              </button>
+              <button type="button" class="category-card" data-category="journey">
+                <div class="card-emoji">🛤️</div>
+                <div class="card-content">
+                  <h3 class="card-title">Life Journey</h3>
+                  <p class="card-description">Life's highlights reel 🌅</p>
+                  <div class="question-count">15 questions</div>
+                </div>
+              </button>
+              <button type="button" class="category-card" data-category="mystery">
+                <div class="card-emoji">🔮</div>
+                <div class="card-content">
+                  <h3 class="card-title">Mystery</h3>
+                  <p class="card-description">Spooky and strange 👻</p>
+                  <div class="question-count">10 questions</div>
+                </div>
+              </button>
+              <button type="button" class="category-card" data-category="tech">
+                <div class="card-emoji">💻</div>
+                <div class="card-content">
+                  <h3 class="card-title">Tech</h3>
+                  <p class="card-description">Big brain time 💻</p>
+                  <div class="question-count">10 questions</div>
+                </div>
+              </button>
+              <button type="button" class="category-card" data-category="party">
+                <div class="card-emoji">🎉</div>
+                <div class="card-content">
+                  <h3 class="card-title">Party Mix</h3>
+                  <p class="card-description">Let's go!! ✨🎉</p>
+                  <div class="question-count">Mixed</div>
+                </div>
+              </button>
+              <button type="button" class="category-card" data-category="soulful">
+                <div class="card-emoji">😭</div>
+                <div class="card-content">
+                  <h3 class="card-title">Soulful</h3>
+                  <p class="card-description">Feel it deeply 🌙</p>
+                  <div class="question-count">Mixed</div>
+                </div>
+              </button>
+              <button type="button" class="category-card" data-category="all">
+                <div class="card-emoji">🎲</div>
+                <div class="card-content">
+                  <h3 class="card-title">All Categories</h3>
+                  <p class="card-description">A bit of everything 🎲</p>
+                  <div class="question-count">50+ questions</div>
+                </div>
+              </button>
+              <button type="button" class="category-card" data-category="dares">
+                <div class="card-emoji">🎯</div>
+                <div class="card-content">
+                  <h3 class="card-title">Dares</h3>
+                  <p class="card-description">Brave challenges only 🎯</p>
+                  <div class="question-count">Mood-based</div>
+                </div>
+              </button>
+            </div>
+
+            <div class="category-footer">
+              <div class="invite-section">
+                <p class="invite-text">Invite others: <span id="categoryRoomCode" class="room-code">—</span></p>
               </div>
-              <div class="room-join-row actions">
-                <button type="button" id="createBtn" class="btn primary">Create Room</button>
-              </div>
+              <button type="button" id="startGameBtn" class="btn primary large" disabled>
+                🚀 Start Game
+              </button>
             </div>
           </div>
 
-          <!-- Lobby: Join Form -->
-          <div id="lobbyJoin" class="lobby-sub-screen hidden">
-            <div class="sub-screen-header">
-              <button type="button" class="back-btn" id="backToHomeJoin">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                  stroke-linecap="round" stroke-linejoin="round">
-                  <line x1="19" y1="12" x2="5" y2="12"></line>
-                  <polyline points="12 19 5 12 12 5"></polyline>
-                </svg>
-              </button>
-              <h3 class="sub-screen-title">Join a Room</h3>
-            </div>
-            <div class="room-join">
-              <div class="room-join-row inputs">
-                <input type="text" id="nameInputJoin" placeholder="Your name" maxlength="20" autocomplete="off"
-                  aria-label="Enter your name" spellcheck="false" />
-                <input type="text" id="roomInput" placeholder="Room code" maxlength="12" autocomplete="off"
-                  aria-label="Enter room code" spellcheck="false" />
-              </div>
-              <div class="room-join-row">
-                <label class="mood-label" for="moodSelectJoin">Your current mood (optional)</label>
-                <div class="mood-selector" id="moodSelectJoin">
-                  <button type="button" class="mood-btn" data-mood="chill" title="Relaxed and chill">
-                    <span class="mood-emoji">😌</span>
-                    <span class="mood-text">Chill</span>
-                  </button>
-                  <button type="button" class="mood-btn" data-mood="hype" title="Energetic and fun">
-                    <span class="mood-emoji">⚡</span>
-                    <span class="mood-text">Hype</span>
-                  </button>
-                  <button type="button" class="mood-btn" data-mood="chaotic" title="Wild and unpredictable">
-                    <span class="mood-emoji">🔥</span>
-                    <span class="mood-text">Chaotic</span>
-                  </button>
-                  <button type="button" class="mood-btn" data-mood="deep" title="Thoughtful and emotional">
-                    <span class="mood-emoji">🌊</span>
-                    <span class="mood-text">Deep</span>
-                  </button>
+          <!-- Player Waiting View -->
+          <div id="playerWaitingView" class="category-view hidden">
+            <div class="waiting-container">
+              <div class="waiting-content">
+                <h2 class="waiting-title">Get Ready! 🎉</h2>
+                <div class="waiting-spinner">
+                  <div class="spinner"></div>
+                </div>
+                <p class="waiting-text">Waiting for host to pick a category...</p>
+                <div class="category-preview hidden" id="categoryPreview">
+                  <p class="preview-text">Host chose: <span id="chosenCategoryEmoji">🔥</span> <span
+                      id="chosenCategoryName">Spicy</span> — starting soon!</p>
                 </div>
               </div>
-              <div class="room-join-row actions">
-                <button type="button" id="joinBtn" class="btn primary">Join Now</button>
-              </div>
+              <div class="waiting-players" id="waitingPlayersList"></div>
             </div>
           </div>
 
-          <div class="room-meta">
-            <div class="room-status-row">
-              <p id="roomStatus" class="room-status">Not connected</p>
-              <button type="button" id="inlineShareBtn" class="btn inline-share hidden" aria-label="Copy room link">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                  <circle cx="18" cy="5" r="3" />
-                  <circle cx="6" cy="12" r="3" />
-                </svg>
-                Share
-              </button>
-            </div>
-            <div id="groupMood" class="group-mood hidden">
-              <span class="group-mood-emoji">😌</span>
-              <span class="group-mood-text">Chill</span>
-            </div>
-            <div id="participantBadge" class="participant-badge hidden" aria-live="polite">
-              <span class="badge-dot" aria-hidden="true"></span>
-              <span id="participantCount">0</span> <span id="participantLabel">in room</span>
-            </div>
-            <div id="playerList" class="player-list hidden"></div>
-          </div>
         </div>
       </div>
 
-      <!-- Game Screen -->
+      <!-- ===== GAME SCREEN ===== -->
       <div id="gameScreen" class="screen hidden">
 
-        <!-- Game Screen Top Actions -->
-        <div class="top-actions">
-          <button type="button" id="leaveBtn" class="btn danger hidden" title="Leave current room">🚪 Leave</button>
+        <!-- Room Meta -->
+        <div class="room-meta">
+          <div class="room-status-row">
+            <p id="roomStatus" class="room-status">Not connected</p>
+            <button type="button" id="inlineShareBtn" class="btn inline-share hidden" aria-label="Copy room link">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="18" cy="5" r="3" />
+                <circle cx="6" cy="12" r="3" />
+                <path d="M15 7L9 11M9 13l6 4" />
+              </svg>
+              Share
+            </button>
+          </div>
+          <div id="groupMood" class="group-mood hidden">
+            <span class="group-mood-emoji">😌</span>
+            <span class="group-mood-text">Chill</span>
+          </div>
+          <div id="participantBadge" class="participant-badge hidden" aria-live="polite">
+            <span class="badge-dot" aria-hidden="true"></span>
+            <span id="participantCount">0</span> <span id="participantLabel">in room</span>
+          </div>
+          <div id="playerList" class="player-list hidden"></div>
         </div>
 
         <!-- Host Controls Panel -->
@@ -242,115 +493,45 @@
           <button type="button" id="hostControlsToggle" class="host-controls-toggle" aria-label="Toggle host controls">
             ⚙️ Host Controls <span id="hostToggleIcon">▾</span>
           </button>
-          
+
           <div id="hostControlsContent" class="host-controls-content">
             <div class="host-badge">👑 You are the Host</div>
-            
+
             <!-- Category Selector -->
             <div class="host-control-group">
               <label>Question Category</label>
               <div class="pills-wrapper">
                 <div class="category-pills" role="radiogroup" aria-label="Question category">
-                  <button type="button" class="pill" data-value="all" role="radio" aria-checked="false">All
-                    &#x1F3B2;</button>
-                  <button type="button" class="pill active" data-value="chill" role="radio" aria-checked="true">Chill
-                    &#x1F319;</button>
-                  <button type="button" class="pill" data-value="romance" role="radio" aria-checked="false">Romance
-                    &#x1F496;</button>
-                  <button type="button" class="pill" data-value="funny" role="radio" aria-checked="false">Funny
-                    &#x1F602;</button>
-                  <button type="button" class="pill" data-value="spicy" role="radio" aria-checked="false">Spicy
-                    &#x1F336;&#xFE0F;</button>
-                  <button type="button" class="pill" data-value="deep" role="radio" aria-checked="false">Deep
-                    &#x1F9E0;</button>
-                  <button type="button" class="pill" data-value="chaos" role="radio" aria-checked="false">Chaos
-                    &#x1F608;</button>
-                  <button type="button" class="pill" data-value="work" role="radio" aria-checked="false">Work
-                    &#x1F4BC;</button>
-                  <button type="button" class="pill" data-value="nostalgia" role="radio" aria-checked="false">Nostalgia
-                    &#x1F4FC;</button>
-                  <button type="button" class="pill" data-value="creative" role="radio" aria-checked="false">Creative
-                    &#x1F3A8;</button>
-                  <button type="button" class="pill" data-value="movies" role="radio" aria-checked="false">Movies
-                    &#x1F3AC;</button>
-                  <button type="button" class="pill" data-value="sports" role="radio" aria-checked="false">Sports
-                    &#x26BD;</button>
-                  <button type="button" class="pill" data-value="travel" role="radio" aria-checked="false">Travel
-                    &#x2708;&#xFE0F;</button>
-                  <button type="button" class="pill" data-value="food" role="radio" aria-checked="false">Food
-                    &#x1F355;</button>
-                  <button type="button" class="pill" data-value="music" role="radio" aria-checked="false">Music
-                    &#x1F3B5;</button>
-                  <button type="button" class="pill" data-value="gaming" role="radio" aria-checked="false">Gaming
-                    &#x1F3AE;</button>
-                  <button type="button" class="pill" data-value="journey" role="radio" aria-checked="false">Life Journey
-                    &#x1F305;</button>
-                  <button type="button" class="pill" data-value="mystery" role="radio" aria-checked="false">Mystery
-                    &#x1F47B;</button>
-                  <button type="button" class="pill" data-value="tech" role="radio" aria-checked="false">Tech
-                    &#x1F4BB;</button>
-                  <button type="button" class="pill" data-value="party" role="radio" aria-checked="false">Party Mix
-                    &#x2728;</button>
-                  <button type="button" class="pill" data-value="dares" role="radio" aria-checked="false">&#x1F389; Dares</button>
-                  <button type="button" class="pill" data-value="soulful" role="radio" aria-checked="false">&#x1F62D; Soulful</button>
+                  <button type="button" class="pill" data-value="all" role="radio" aria-checked="false">All &#x1F3B2;</button>
+                  <button type="button" class="pill active" data-value="chill" role="radio" aria-checked="true">Chill &#x1F319;</button>
+                  <button type="button" class="pill" data-value="funny" role="radio" aria-checked="false">Funny &#x1F602;</button>
+                  <button type="button" class="pill" data-value="spicy" role="radio" aria-checked="false">Spicy &#x1F336;&#xFE0F;</button>
+                  <button type="button" class="pill" data-value="deep" role="radio" aria-checked="false">Deep &#x1F9E0;</button>
+                  <button type="button" class="pill" data-value="chaos" role="radio" aria-checked="false">Chaos &#x1F608;</button>
+                  <button type="button" class="pill" data-value="work" role="radio" aria-checked="false">Work &#x1F4BC;</button>
+                  <button type="button" class="pill" data-value="nostalgia" role="radio" aria-checked="false">Nostalgia &#x1F4FC;</button>
+                  <button type="button" class="pill" data-value="creative" role="radio" aria-checked="false">Creative &#x1F3A8;</button>
+                  <button type="button" class="pill" data-value="movies" role="radio" aria-checked="false">Movies &#x1F3AC;</button>
+                  <button type="button" class="pill" data-value="sports" role="radio" aria-checked="false">Sports &#x26BD;</button>
+                  <button type="button" class="pill" data-value="travel" role="radio" aria-checked="false">Travel &#x2708;&#xFE0F;</button>
+                  <button type="button" class="pill" data-value="food" role="radio" aria-checked="false">Food &#x1F355;</button>
+                  <button type="button" class="pill" data-value="music" role="radio" aria-checked="false">Music &#x1F3B5;</button>
+                  <button type="button" class="pill" data-value="gaming" role="radio" aria-checked="false">Gaming &#x1F3AE;</button>
+                  <button type="button" class="pill" data-value="romance" role="radio" aria-checked="false">Romance &#x1F496;</button>
+              <label class="timer-label">
+                <input type="checkbox" id="timerToggle"> Timer
+              </label>
+              <div class="timer-options hidden" id="timerOptions">
+                <button class="timer-btn" data-seconds="30">30s</button>
+                <button class="timer-btn active" data-seconds="60">60s</button>
+                <button class="timer-btn" data-seconds="90">90s</button>
+                <div class="timer-custom">
+                  <input type="number" id="timerCustomInput" class="timer-custom-input" min="10" max="600"
+                    placeholder="Custom" aria-label="Custom timer duration in seconds" />
+                  <span class="timer-custom-unit">s</span>
                 </div>
               </div>
             </div>
-
-            <!-- Question Controls -->
-            <div class="host-control-group">
-              <label>Questions</label>
-              <div class="host-buttons">
-                <button type="button" id="nextBtn" class="btn primary large" disabled>
-                  Next Question
-                  <svg class="btn-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                    stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <polyline points="9 18 15 12 9 6" />
-                  </svg>
-                </button>
-                <button type="button" id="skipBtn" class="btn ghost" disabled>
-                  Skip
-                  <svg class="btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                    stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <polygon points="5 3 19 12 5 21 5 3" />
-                    <line x1="20" y1="4" x2="20" y2="20" />
-                  </svg>
-                </button>
-                <button type="button" id="resetBtn" class="btn secondary" disabled>
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <polyline points="1 4 1 10 7 10" />
-                    <path d="M3.51 15a9 9 0 1 0 .49-3.5" />
-                  </svg>
-                  Reset
-                </button>
-              </div>
-            </div>
-
-            <!-- Timer Controls -->
-            <div class="host-control-group">
-              <label>Timer</label>
-              <div class="timer-controls">
-                <label class="timer-label">
-                  <input type="checkbox" id="timerToggle"> Timer
-                </label>
-                <div class="timer-options hidden" id="timerOptions">
-                  <button class="timer-btn" data-seconds="30">30s</button>
-                  <button class="timer-btn active" data-seconds="60">60s</button>
-                  <button class="timer-btn" data-seconds="90">90s</button>
-                  <div class="timer-custom">
-                    <input type="number" id="timerCustomInput" class="timer-custom-input" min="10" max="600"
-                      placeholder="Custom" aria-label="Custom timer duration in seconds" />
-                    <span class="timer-custom-unit">s</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Language Controls -->
-            <div class="host-control-group">
-              <label>Language</label>
-              <div class="language-options" id="languageOptions">
                 <button class="lang-btn active" data-lang="en" title="English">EN</button>
                 <button class="lang-btn" data-lang="hi" title="Hindi">हि</button>
                 <button class="lang-btn" data-lang="hinglish" title="Hinglish">Hing</button>
@@ -360,26 +541,25 @@
             <!-- Room Lock -->
             <div class="host-control-group">
               <label>Room Settings</label>
-              <button type="button" id="lockRoomBtn" class="btn secondary">
-                🔒 Lock Room
-              </button>
+              <button type="button" id="lockRoomBtn" class="btn secondary">🔒 Lock Room</button>
             </div>
           </div>
         </div>
 
         <!-- Question Display -->
         <div class="question-area reveal" id="questionArea" style="--delay: 240ms;">
+
           <!-- Category Badge for Players -->
           <div id="categoryBadge" class="category-badge hidden">
             Currently playing: <span id="categoryEmoji">🔥</span> <span id="categoryName">Spicy</span>
-            <span id="categoryProgress" class="category-progress">12 / 24 questions</span>
+            <span id="categoryProgress" class="category-progress">0 / 0 questions</span>
           </div>
-          
+
           <!-- Waiting Message for Players -->
           <div id="waitingMessage" class="waiting-message hidden">
             Waiting for host to start... 👀
           </div>
-          
+
           <div id="turnBadge" class="turn-badge hidden" aria-live="polite"></div>
           <div id="timerRing" class="timer-ring hidden">
             <svg viewBox="0 0 60 60">
@@ -388,6 +568,7 @@
             </svg>
             <span id="timerCount" class="timer-count">60</span>
           </div>
+
           <div class="question-card" id="questionCard">
             <button type="button" id="copyQuestionBtn" class="copy-btn" aria-label="Copy question">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
@@ -416,6 +597,24 @@
                 <p class="scoreboard-title">Category Leaderboard</p>
                 <div id="categoryScoreList" class="scoreboard-list"></div>
               </div>
+              <!-- Next Question Button -->
+              <div class="question-controls">
+                <button type="button" id="nextBtn" class="btn primary large" disabled>
+                  Next Question
+                  <svg class="btn-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <polyline points="9 18 15 12 9 6" />
+                  </svg>
+                </button>
+                <button type="button" id="skipBtn" class="btn ghost" disabled>
+                  Skip
+                  <svg class="btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <polygon points="5 3 19 12 5 21 5 3" />
+                    <line x1="20" y1="4" x2="20" y2="20" />
+                  </svg>
+                </button>
+              </div>
             </div>
           </div>
 
@@ -438,35 +637,9 @@
             </div>
             <span id="progressLabel" class="progress-label" aria-hidden="true">0 / 0</span>
           </div>
-
-          <!-- Actions -->
-          <div class="actions reveal" style="--delay: 400ms;">
-            <button type="button" id="nextBtn" class="btn primary large" disabled>
-              Next Question
-              <svg class="btn-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <polyline points="9 18 15 12 9 6" />
-              </svg>
-            </button>
-            <button type="button" id="skipBtn" class="btn ghost" disabled>
-              Skip
-              <svg class="btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <polygon points="5 3 19 12 5 21 5 3" />
-                <line x1="20" y1="4" x2="20" y2="20" />
-              </svg>
-            </button>
-            <button type="button" id="resetBtn" class="btn secondary" disabled>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <polyline points="1 4 1 10 7 10" />
-                <path d="M3.51 15a9 9 0 1 0 .49-3.5" />
-              </svg>
-              Reset
-            </button>
-          </div>
         </div>
-      </div>
+
+      </div><!-- end #gameScreen -->
 
     </section>
   </main>
@@ -479,34 +652,29 @@
   </script>
 
   <script id="fragmentShader" type="x-shader/x-fragment">
-precision mediump float;
-uniform vec2 u_resolution;
-uniform float u_time;
-uniform vec3 u_color1;
-uniform vec3 u_color2;
-uniform vec3 u_color3;
-uniform vec3 u_color4;
+    precision mediump float;
+    uniform vec2 u_resolution;
+    uniform float u_time;
+    uniform vec3 u_color1;
+    uniform vec3 u_color2;
+    uniform vec3 u_color3;
+    uniform vec3 u_color4;
 
-float rand(vec2 n) { return fract(sin(dot(n, vec2(12.9898, 4.1414))) * 43758.5453); }
+    float rand(vec2 n) { return fract(sin(dot(n, vec2(12.9898, 4.1414))) * 43758.5453); }
 
-void main() {
-  vec2 st = gl_FragCoord.xy / u_resolution.xy;
-  float t = u_time * 0.12;
-
-  float m1 = 0.5 + 0.5 * sin(t + st.x * 2.5 + st.y * 1.8);
-  float m2 = 0.5 + 0.5 * sin(t * 1.3 + st.x * 4.0 - st.y * 3.0);
-  float m3 = 0.5 + 0.5 * sin(t * 0.7 - st.x * 3.0 + st.y * 5.0);
-
-  vec3 color = mix(u_color1, u_color2, m1);
-  color = mix(color, u_color3, m2 * 0.5);
-  color = mix(color, u_color4, m3 * 0.4);
-
-  // subtle grain
-  float grain = rand(st + vec2(t)) * 0.025;
-  color += grain;
-
-  gl_FragColor = vec4(color, 1.0);
-}
+    void main() {
+      vec2 st = gl_FragCoord.xy / u_resolution.xy;
+      float t = u_time * 0.12;
+      float m1 = 0.5 + 0.5 * sin(t + st.x * 2.5 + st.y * 1.8);
+      float m2 = 0.5 + 0.5 * sin(t * 1.3 + st.x * 4.0 - st.y * 3.0);
+      float m3 = 0.5 + 0.5 * sin(t * 0.7 - st.x * 3.0 + st.y * 5.0);
+      vec3 color = mix(u_color1, u_color2, m1);
+      color = mix(color, u_color3, m2 * 0.5);
+      color = mix(color, u_color4, m3 * 0.4);
+      float grain = rand(st + vec2(t)) * 0.025;
+      color += grain;
+      gl_FragColor = vec4(color, 1.0);
+    }
   </script>
 
   <script src="script.js" defer></script>

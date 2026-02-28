@@ -16,7 +16,8 @@ function createRoom(category = "chill") {
     isLocked: false,
     lastActivity: Date.now(),
     dominantMood: null, // most common mood among players
-    playerMoods: {} // { socketId: mood } for tracking individual player moods
+    playerMoods: {}, // { socketId: mood } for tracking individual player moods
+    gamePhase: "lobby" // "lobby" | "category_select" | "playing"
   };
 }
 

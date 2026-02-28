@@ -131,6 +131,7 @@ module.exports = function socketHandler(io, logger) {
 
       if (!existingRoom) {
         const newRoom = createRoom();
+        newRoom.gamePhase = "category_select"; // Set to category selection for new rooms
         updateActivity(newRoom);
         rooms[roomId] = newRoom;
         if (logger) logger.info({ room: roomId }, "ROOM_CREATED");
@@ -422,6 +423,26 @@ module.exports = function socketHandler(io, logger) {
       Object.keys(rateLimits).forEach(k => {
         if (k.startsWith(socket.id) || k.startsWith(clientIp)) delete rateLimits[k];
       });
+    });
+
+    socket.on("startGame", ({ roomId }) => {
+      const room = getRoom(roomId);
+      if (!room) return;
+      normalizeRoomPlayers(room);
+      if (!isHost(socket, room)) return;
+      
+      // Validate room exists and gamePhase is "category_select"
+      if (room.gamePhase !== "category_select") return;
+      
+      // Validate a category has been selected (room.category exists)
+      if (!room.category || room.category === "all") return;
+      
+      // Set room.gamePhase = "playing"
+      room.gamePhase = "playing";
+      updateActivity(room);
+      broadcastState(roomId);
+      
+      if (logger) logger.info({ room: roomId, category: room.category }, "GAME_STARTED");
     });
 
   });
