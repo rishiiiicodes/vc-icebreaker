@@ -294,9 +294,7 @@ async function run() {
     console.log("Starting test: Timer settings");
     await sleep(1100);
     s1.emit("setTimer", { roomId: ROOM, enabled: true, duration: 30 });
-    s1.on("roomState", state => {
-      console.log("Timer test roomState:", JSON.stringify({ timerEnabled: state.timerEnabled, timerDuration: state.timerDuration }));
-    });
+
     await waitForState(s1, s => {
       console.log("Timer state received:", JSON.stringify({ timerEnabled: s.timerEnabled, timerDuration: s.timerDuration }));
       return s.timerEnabled === true && s.timerDuration === 30;

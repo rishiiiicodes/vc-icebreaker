@@ -245,6 +245,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (leaveBtn)      leaveBtn.classList.toggle("hidden", !on);
     if (playersToggle) playersToggle.classList.toggle("hidden", !on);
     if (inlineShareBtn) inlineShareBtn.classList.toggle("hidden", !on);
+    if (languageControls) languageControls.classList.toggle("hidden", !on);
   }
 
   /* ================= TIMER ================= */
@@ -1191,5 +1192,98 @@ function updateUIFromState(state, isFirstState) {
   window.addEventListener("appinstalled", () => {
     if (installBtn) installBtn.classList.add("hidden");
     showToast("App installed!");
+  });
+
+  /* ================= PARALLAX EFFECT ================= */
+  let ticking = false;
+  const landingContainer = document.querySelector('.landing-container');
+  const heroEmoji = document.querySelector('.hero-emoji');
+  const stepCards = document.querySelectorAll('.step-card');
+  const showcasePills = document.querySelectorAll('.showcase-pill');
+  
+  function updateParallax() {
+    const scrolled = window.pageYOffset;
+    const windowHeight = window.innerHeight;
+    
+    // Parallax for hero emoji
+    if (heroEmoji && scrolled < windowHeight) {
+      const offset = scrolled * 0.3;
+      heroEmoji.style.transform = `translateY(${offset}px) rotate(${offset * 0.1}deg)`;
+    }
+    
+    // Parallax for step cards with stagger
+    stepCards.forEach((card, index) => {
+      const rect = card.getBoundingClientRect();
+      if (rect.top < windowHeight && rect.bottom > 0) {
+        const progress = (windowHeight - rect.top) / windowHeight;
+        const offset = progress * 20;
+        const delay = index * 0.1;
+        card.style.transform = `translateY(${-offset}px)`;
+        card.style.opacity = Math.min(1, progress * 1.5);
+        card.style.transitionDelay = `${delay}s`;
+      }
+    });
+    
+    // Add magnetic effect to showcase pills
+    showcasePills.forEach(pill => {
+      pill.addEventListener('mousemove', (e) => {
+        const rect = pill.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        pill.style.setProperty('--mouse-x', `${x}px`);
+        pill.style.setProperty('--mouse-y', `${y}px`);
+      });
+    });
+    
+    ticking = false;
+  }
+  
+  function requestParallaxUpdate() {
+    if (!ticking && landingContainer) {
+      window.requestAnimationFrame(updateParallax);
+      ticking = true;
+    }
+  }
+  
+  // Mouse tracking for step cards
+  stepCards.forEach(card => {
+    card.addEventListener('mousemove', (e) => {
+      const rect = card.getBoundingClientRect();
+      const x = ((e.clientX - rect.left) / rect.width) * 100;
+      const y = ((e.clientY - rect.top) / rect.height) * 100;
+      card.style.setProperty('--mouse-x', `${x}%`);
+      card.style.setProperty('--mouse-y', `${y}%`);
+    });
+    
+    card.addEventListener('mouseleave', () => {
+      card.style.setProperty('--mouse-x', '50%');
+      card.style.setProperty('--mouse-y', '50%');
+    });
+  });
+  
+  // Only add parallax on landing page and if not reduced motion
+  if (landingContainer && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    window.addEventListener('scroll', requestParallaxUpdate, { passive: true });
+    updateParallax(); // Initial call
+  }
+  
+  /* ================= SMOOTH SCROLL REVEAL ================= */
+  const observerOptions = {
+    threshold: 0.1,
+    rootMargin: '0px 0px -100px 0px'
+  };
+  
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('reveal');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, observerOptions);
+  
+  // Observe elements for reveal animation
+  document.querySelectorAll('.step-card, .showcase-pill').forEach(el => {
+    observer.observe(el);
   });
 });

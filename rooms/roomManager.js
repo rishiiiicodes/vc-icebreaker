@@ -1,3 +1,5 @@
+const config = require("../config");
+
 const rooms = {};
 
 function createRoom(category = "chill") {
@@ -6,10 +8,10 @@ function createRoom(category = "chill") {
     usedIndexes: [],
     currentQuestion: null,
     participants: 0,
-    currentTurn: 0,
+    currentTurn: -1,
     players: {},
-    scores: {}, // per-round/question scores
-    categoryScores: {}, // { categoryName: { playerName: totalWins } }
+    scores: {}, // per-round/question scores (keyed by socket ID)
+    categoryScores: {}, // { categoryName: { socketId: totalWins } }
     votedThisRound: {},
     timerEnabled: false,
     timerDuration: 60,
@@ -37,7 +39,7 @@ function updateActivity(room) {
 function startCleanup(io, logger) {
   setInterval(() => {
     const now = Date.now();
-    const ttl = 30 * 60 * 1000;
+    const ttl = config.roomInactivityTTL;
     Object.keys(rooms).forEach(roomId => {
       const room = rooms[roomId];
       if (!room) return;
@@ -50,7 +52,7 @@ function startCleanup(io, logger) {
         logger.info({ room: roomId }, "ROOM_CLEANUP - inactive");
       }
     });
-  }, 5 * 60 * 1000);
+  }, config.roomCleanupInterval);
 }
 
 module.exports = {

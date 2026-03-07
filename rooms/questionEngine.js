@@ -1228,11 +1228,11 @@ Object.keys(QUESTIONS).forEach(lang => {
   q.soulful = [...(q.deep || []), ...(q.romance || [])];
 
   q.all = Object.entries(q)
-    .filter(([key]) => key !== "all")
+    .filter(([key]) => key !== "all" && key !== "dares" && key !== "party" && key !== "soulful")
     .flatMap(([, questions]) => questions);
 });
 
-const VALID_CATEGORIES = Object.keys(QUESTIONS.en).filter(k => k !== "all").concat("all", "dares");
+const VALID_CATEGORIES = Object.keys(QUESTIONS.en).filter(k => k !== "all").concat("all");
 const VALID_LANGUAGES = Object.keys(QUESTIONS);
 
 function getQuestionIndex(room, question) {
@@ -1275,6 +1275,23 @@ function getRandomQuestion(room, record = true) {
 function getTotal(room) {
   const lang = room?.language || "en";
   if (!room?.category) return 0;
+  
+  // Special handling for dares category (nested object structure)
+  if (room.category === "dares") {
+    const daresObj = (QUESTIONS[lang] || QUESTIONS.en).dares;
+    if (!daresObj || typeof daresObj !== "object") return 0;
+    
+    // If there's a dominant mood, return count for that specific mood
+    if (room.dominantMood && daresObj[room.dominantMood]) {
+      return daresObj[room.dominantMood].length || 0;
+    }
+    
+    // Otherwise, sum all sub-arrays
+    return Object.values(daresObj).reduce((sum, arr) => {
+      return sum + (Array.isArray(arr) ? arr.length : 0);
+    }, 0);
+  }
+  
   return (QUESTIONS[lang] || QUESTIONS.en)[room.category]?.length || 0;
 }
 

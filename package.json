@@ -1,23 +1,33 @@
 {
   "name": "vc-icebreaker",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Real-time multiplayer icebreaker for video calls",
   "main": "server.js",
   "scripts": {
     "test": "node -e \"process.env.NODE_ENV='test'; process.env.ALLOWED_ORIGINS='*'; require('./test.js')\"",
     "start": "node server.js",
-    "dev": "node server.js"
+    "dev": "node server.js",
+    "prod": "NODE_ENV=production node server.js",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
   },
   "keywords": [
     "icebreaker",
     "multiplayer",
     "socket.io",
-    "game"
+    "game",
+    "video-call",
+    "team-building"
   ],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
+  },
   "dependencies": {
+    "compression": "^1.8.1",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
     "express": "^4.22.1",
@@ -29,6 +39,7 @@
   },
   "devDependencies": {
     "canvas": "^3.2.1",
+    "eslint": "^8.57.0",
     "socket.io-client": "^4.8.3"
   }
 }

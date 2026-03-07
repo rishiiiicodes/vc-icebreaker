@@ -1,3 +1,4 @@
+const config = require("./config");
 const {
   rooms,
   createRoom,
@@ -24,15 +25,25 @@ const {
   skipQuestion,
   resetRoom
 } = require("./rooms/questionEngine");
+const {
+  validateRoomId,
+  validatePlayerName,
+  validateCategory,
+  validateLanguage,
+  validateTimerDuration,
+  validateEmoji,
+  validateMood
+} = require("./utils/validation");
+const { sanitizeString } = require("./utils/sanitize");
 
-// Removed custom logging functions (timestamp, log) as we use Pino now
+const NAME_MAX_LENGTH = 20;
 
 function truncate(text, max = 40) {
   if (!text) return "";
   return text.length > max ? text.slice(0, max) + "..." : text;
 }
 
-const MAX_PLAYERS_PER_ROOM = parseInt(process.env.MAX_PLAYERS_PER_ROOM || "50", 10);
+const MAX_PLAYERS_PER_ROOM = config.maxPlayersPerRoom;
 
 module.exports = function socketHandler(io, logger) {
   startCleanup(io, logger);
@@ -65,12 +76,65 @@ module.exports = function socketHandler(io, logger) {
     return room ? room.size : 0;
   }
 
+  function recalculateDominantMood(room) {
+    if (!room || !room.playerMoods) return;
+    
+    const moodCounts = {};
+    Object.values(room.playerMoods).forEach(playerMood => {
+      if (playerMood) {
+        moodCounts[playerMood] = (moodCounts[playerMood] || 0) + 1;
+      }
+    });
+    
+    // Find most common mood (ties broken randomly)
+    let maxCount = 0;
+    let dominantMood = null;
+    Object.entries(moodCounts).forEach(([moodName, count]) => {
+      if (count > maxCount) {
+        maxCount = count;
+        dominantMood = moodName;
+      } else if (count === maxCount && Math.random() < 0.5) {
+        // Random tie-breaker
+        dominantMood = moodName;
+      }
+    });
+    
+    room.dominantMood = dominantMood;
+  }
+
   function toLegacyPlayersMap(room) {
     const legacy = {};
     Object.entries(room.players || {}).forEach(([id, p]) => {
       legacy[id] = p?.name || "";
     });
     return legacy;
+  }
+
+  function transformScoresToNames(room) {
+    // Transform socket ID-based scores to name-based scores for client
+    const nameScores = {};
+    Object.entries(room.scores || {}).forEach(([socketId, score]) => {
+      const player = room.players[socketId];
+      if (player && player.name) {
+        nameScores[player.name] = score;
+      }
+    });
+    return nameScores;
+  }
+
+  function transformCategoryScoresToNames(room) {
+    // Transform socket ID-based category scores to name-based scores for client
+    const nameCategoryScores = {};
+    Object.entries(room.categoryScores || {}).forEach(([category, scores]) => {
+      nameCategoryScores[category] = {};
+      Object.entries(scores).forEach(([socketId, score]) => {
+        const player = room.players[socketId];
+        if (player && player.name) {
+          nameCategoryScores[category][player.name] = score;
+        }
+      });
+    });
+    return nameCategoryScores;
   }
 
   function broadcastState(roomId) {
@@ -86,6 +150,8 @@ module.exports = function socketHandler(io, logger) {
       ...room,
       playersV2: room.players,
       players: toLegacyPlayersMap(room),
+      scores: transformScoresToNames(room),
+      categoryScores: transformCategoryScoresToNames(room),
       total
     });
   }
@@ -99,18 +165,29 @@ module.exports = function socketHandler(io, logger) {
       const { roomId: rawRoomId, name } = typeof data === "string"
         ? { roomId: data, name: "" }
         : (data || {});
-      if (!rawRoomId || typeof rawRoomId !== "string") return;
-      let roomId = rawRoomId.trim().toUpperCase().slice(0, 12);
-      if (!roomId || roomId.length < 2) return;
+      
+      // Validate room ID
+      const roomValidation = validateRoomId(rawRoomId);
+      if (!roomValidation.valid) {
+        socket.emit("error", { message: roomValidation.error });
+        return;
+      }
+      const roomId = roomValidation.value;
 
       // IP-based rate limit for room creation/joining to prevent spammer creating 1000s of rooms
-      if (isRateLimited(clientIp, "joinRoom", 200)) return; // Max 5 joins per second per IP
+      if (isRateLimited(clientIp, "joinRoom", 200)) {
+        socket.emit("error", { message: "Too many join attempts, please slow down" });
+        return;
+      }
 
       // Leave previous rooms
       socket.rooms.forEach(r => { if (r !== socket.id) socket.leave(r); });
 
       const existingRoom = getRoom(roomId);
-      const safeName = typeof name === "string" ? name.trim().slice(0, 20) : "";
+      
+      // Validate player name
+      const nameValidation = validatePlayerName(name);
+      const safeName = nameValidation.valid ? nameValidation.value : `Player ${Object.keys(existingRoom?.players || {}).length + 1}`;
 
       // Allow reconnections to full/locked rooms if the name matches an existing slot
       // Allow reconnections to full/locked rooms if the name matches an existing slot that is currently disconnected
@@ -173,7 +250,8 @@ module.exports = function socketHandler(io, logger) {
       }
 
       if (!room.language) room.language = "en";
-      if (room.scores[finalName] == null) room.scores[finalName] = 0;
+      // Initialize scores for this socket ID (not by name)
+      if (room.scores[socket.id] == null) room.scores[socket.id] = 0;
       updateActivity(room);
 
       if (logger) logger.info({ room: roomId, participants: getParticipantCount(roomId) }, "PLAYER_JOINED");
@@ -186,10 +264,14 @@ module.exports = function socketHandler(io, logger) {
       if (!room) return;
       normalizeRoomPlayers(room);
       if (!isHost(socket, room)) return;
-      const safeCategory = typeof category === "string"
-        ? category.toLowerCase().replace(/[^a-z]/g, "")
-        : "";
-      changeCategory(room, safeCategory);
+      
+      const categoryValidation = validateCategory(category);
+      if (!categoryValidation.valid) {
+        socket.emit("error", { message: categoryValidation.error });
+        return;
+      }
+      
+      changeCategory(room, categoryValidation.value);
 
       updateActivity(room);
 
@@ -202,31 +284,19 @@ module.exports = function socketHandler(io, logger) {
       const room = getRoom(roomId);
       if (!room) return;
       
+      // Validate mood
+      const moodValidation = validateMood(mood);
+      if (!moodValidation.valid) {
+        socket.emit("error", { message: moodValidation.error });
+        return;
+      }
+      
       // Store player's mood
-      room.playerMoods[socket.id] = mood;
+      room.playerMoods[socket.id] = moodValidation.value;
       
       // Recalculate dominant mood
-      const moodCounts = {};
-      Object.values(room.playerMoods).forEach(playerMood => {
-        if (playerMood) {
-          moodCounts[playerMood] = (moodCounts[playerMood] || 0) + 1;
-        }
-      });
+      recalculateDominantMood(room);
       
-      // Find most common mood (ties broken randomly)
-      let maxCount = 0;
-      let dominantMood = null;
-      Object.entries(moodCounts).forEach(([moodName, count]) => {
-        if (count > maxCount) {
-          maxCount = count;
-          dominantMood = moodName;
-        } else if (count === maxCount && Math.random() < 0.5) {
-          // Random tie-breaker
-          dominantMood = moodName;
-        }
-      });
-      
-      room.dominantMood = dominantMood;
       updateActivity(room);
       broadcastState(roomId);
     });
@@ -237,13 +307,17 @@ module.exports = function socketHandler(io, logger) {
       if (!room) return;
       normalizeRoomPlayers(room);
       if (!isHost(socket, room)) return;
-      const safeLang = typeof language === "string" ? language.toLowerCase().replace(/[^a-z]/g, "") : "";
-      if (!VALID_LANGUAGES.includes(safeLang)) return;
+      
+      const langValidation = validateLanguage(language);
+      if (!langValidation.valid) {
+        socket.emit("error", { message: langValidation.error });
+        return;
+      }
 
-      const prevLang = changeLanguage(room, safeLang);
+      const prevLang = changeLanguage(room, langValidation.value);
       if (!prevLang) return;
       updateActivity(room);
-      if (logger) logger.info({ room: roomId, from: prevLang, to: safeLang }, "LANGUAGE_CHANGED");
+      if (logger) logger.info({ room: roomId, from: prevLang, to: langValidation.value }, "LANGUAGE_CHANGED");
 
       broadcastState(roomId);
     });
@@ -254,11 +328,15 @@ module.exports = function socketHandler(io, logger) {
       if (!room) return;
       normalizeRoomPlayers(room);
       if (!isHost(socket, room)) return;
-      const dur = Math.floor(Number(duration));
-      // Accept any positive integer 10–600 seconds (custom timer support)
-      if (!Number.isFinite(dur) || dur < 10 || dur > 600) return;
+      
+      const durationValidation = validateTimerDuration(duration);
+      if (!durationValidation.valid) {
+        socket.emit("error", { message: durationValidation.error });
+        return;
+      }
+      
       room.timerEnabled = !!enabled;
-      room.timerDuration = dur;
+      room.timerDuration = durationValidation.value;
       updateActivity(room);
       broadcastState(roomId);
     });
@@ -312,16 +390,14 @@ module.exports = function socketHandler(io, logger) {
       const room = getRoom(roomId);
       if (!room) return;
       normalizeRoomPlayers(room);
-      // Remove noisy console.log
-      const emojiStr = String(emoji).trim();
-      const base = emojiStr.replace(/\uFE0F/g, "");
-      const VALID = ["\u{1F525}", "\u{1F602}", "\u{1F62E}"].map(e => e.replace(/\uFE0F/g, ""));
-      VALID.push("\u2764");
-      if (!VALID.includes(base)) return;
+      
+      const emojiValidation = validateEmoji(emoji);
+      if (!emojiValidation.valid) return;
+      
       const player = room.players[socket.id];
       const name = player?.name;
       updateActivity(room);
-      io.to(roomId).emit("reaction", { emoji: emojiStr, name });
+      io.to(roomId).emit("reaction", { emoji: emojiValidation.value, name });
     });
 
     socket.on("resetRoom", (roomId) => {
@@ -339,6 +415,7 @@ module.exports = function socketHandler(io, logger) {
     });
 
     socket.on("transferHost", ({ roomId, targetId }) => {
+      if (isRateLimited(socket.id, "transferHost", 1000)) return;
       const room = getRoom(roomId);
       if (!room) return;
       if (!isHost(socket, room)) return;
@@ -357,25 +434,35 @@ module.exports = function socketHandler(io, logger) {
     });
 
     socket.on("castVote", ({ roomId, votedFor }) => {
+      if (isRateLimited(socket.id, "castVote", 300)) return;
       const room = getRoom(roomId);
       if (!room) return;
       normalizeRoomPlayers(room);
       const voter = room.players[socket.id];
       const voterName = voter?.name;
       if (!voterName) return;
+      
+      // Sanitize votedFor to prevent injection attacks
+      const sanitizedVotedFor = sanitizeString(votedFor, NAME_MAX_LENGTH);
+      if (!sanitizedVotedFor) return;
+      
       const names = getPlayerNames(room);
-      if (!names.includes(votedFor)) return;
-      if (voterName === votedFor) return;
+      if (!names.includes(sanitizedVotedFor)) return;
+      if (voterName === sanitizedVotedFor) return;
       if (room.votedThisRound[socket.id]) return;
 
-      // Question-specific score (resets on next/reset)
-      room.scores[votedFor] = (room.scores[votedFor] || 0) + 1;
+      // Find the socket ID of the player being voted for
+      const votedForSocketId = Object.entries(room.players).find(([id, p]) => p.name === sanitizedVotedFor)?.[0];
+      if (!votedForSocketId) return;
+
+      // Question-specific score (keyed by socket ID, resets on next/reset)
+      room.scores[votedForSocketId] = (room.scores[votedForSocketId] || 0) + 1;
       room.votedThisRound[socket.id] = true;
 
-      // Category-persistent score
+      // Category-persistent score (keyed by socket ID)
       const cat = room.category || "all";
       if (!room.categoryScores[cat]) room.categoryScores[cat] = {};
-      room.categoryScores[cat][votedFor] = (room.categoryScores[cat][votedFor] || 0) + 1;
+      room.categoryScores[cat][votedForSocketId] = (room.categoryScores[cat][votedForSocketId] || 0) + 1;
 
       updateActivity(room);
       broadcastState(roomId);
@@ -390,6 +477,11 @@ module.exports = function socketHandler(io, logger) {
             normalizeRoomPlayers(room);
             const wasHost = room.players[socket.id]?.isHost === true;
             delete room.players[socket.id];
+            delete room.playerMoods[socket.id];
+            // Note: Scores (room.scores and room.categoryScores) are NOT deleted here
+            // to allow reconnection without losing accumulated votes.
+            // Scores are only cleared when resetRoom is explicitly called by the host.
+            recalculateDominantMood(room);
             if (wasHost) {
               const newHostId = reassignHost(room);
               if (newHostId) {
@@ -434,8 +526,11 @@ module.exports = function socketHandler(io, logger) {
       // Validate room exists and gamePhase is "category_select"
       if (room.gamePhase !== "category_select") return;
       
-      // Validate a category has been selected (room.category exists)
-      if (!room.category || room.category === "all") return;
+      // Validate a category has been selected
+      if (!room.category) {
+        socket.emit("error", { message: "Please select a category before starting the game" });
+        return;
+      }
       
       // Set room.gamePhase = "playing"
       room.gamePhase = "playing";
